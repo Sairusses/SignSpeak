@@ -5,7 +5,7 @@ import 'package:device_preview/device_preview.dart';
 import 'home.dart';
 
 void main() {
-  bool isPreview = true;
+  bool isPreview = false;
   // ignore: dead_code
   if(isPreview){
     runApp(

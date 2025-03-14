@@ -12,6 +12,8 @@ class MyThemes {
     final Color errorColor = Colors.red.shade700;
     final Color onColor = Color(0xffEEEEEE);
     return ThemeData(
+      highlightColor: primaryColor,
+      focusColor: primaryColor,
       brightness: Brightness.dark,
       primaryColor: primaryColor,
       colorScheme: ColorScheme(

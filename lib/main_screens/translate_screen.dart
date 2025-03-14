@@ -5,10 +5,10 @@ class TranslateScreen extends StatefulWidget {
   const TranslateScreen({super.key});
 
   @override
-  _TranslateScreenState createState() => _TranslateScreenState();
+  TranslateScreenState createState() => TranslateScreenState();
 }
 
-class _TranslateScreenState extends State<TranslateScreen> {
+class TranslateScreenState extends State<TranslateScreen> {
   late CameraController _cameraController;
   bool _isCameraInitialized = false;
   bool _isRecording = false;
