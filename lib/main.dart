@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Theme Tester',
+      title: 'SignSpeak',
       theme: MyThemes().lightTheme,
       darkTheme: MyThemes().darkTheme,
       home: Home(),
@@ -42,7 +42,7 @@ class DevicePrev extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
-      title: 'Theme Tester',
+      title: 'SignSpeak',
       theme: MyThemes().darkTheme,
       darkTheme: MyThemes().darkTheme,
       home: Home(),
