@@ -2,44 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 
 class TranslateScreen extends StatefulWidget {
-  const TranslateScreen({super.key});
+  final CameraController cameraController;
+  final bool isCameraInitialized;
+  const TranslateScreen({super.key, required this.cameraController, required this.isCameraInitialized});
 
   @override
   TranslateScreenState createState() => TranslateScreenState();
 }
 
 class TranslateScreenState extends State<TranslateScreen> {
-  late CameraController _cameraController;
-  bool _isCameraInitialized = false;
+  get cameraController => widget.cameraController;
+  get isCameraInitialized => widget.isCameraInitialized;
   bool _isRecording = false;
   String _translatedText = "Translated text will appear here...";
 
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
   }
 
-  Future<void> _initializeCamera() async {
-    final cameras = await availableCameras();
-    if (cameras.isNotEmpty) {
-      _cameraController = CameraController(
-        cameras[0], // Use the first available camera
-        ResolutionPreset.medium,
-      );
 
-      await _cameraController.initialize();
-      if (!mounted) return;
-
-      setState(() {
-        _isCameraInitialized = true;
-      });
-    }
-  }
 
   Future<void> _startRecording() async {
     if (!_isRecording) {
-      await _cameraController.startVideoRecording();
+      await cameraController.startVideoRecording();
       setState(() {
         _isRecording = true;
       });
@@ -48,7 +34,7 @@ class TranslateScreenState extends State<TranslateScreen> {
 
   Future<void> _stopRecording() async {
     if (_isRecording) {
-      final file = await _cameraController.stopVideoRecording();
+      final file = await cameraController.stopVideoRecording();
       setState(() {
         _isRecording = false;
         _translatedText = "Processing video..."; // Simulated processing
@@ -65,7 +51,7 @@ class TranslateScreenState extends State<TranslateScreen> {
 
   @override
   void dispose() {
-    _cameraController.dispose();
+    cameraController.dispose();
     super.dispose();
   }
 
@@ -81,8 +67,8 @@ class TranslateScreenState extends State<TranslateScreen> {
           SizedBox(
             height: screenHeight * 0.6,
             width: double.infinity,
-            child: _isCameraInitialized
-                ? CameraPreview(_cameraController)
+            child: isCameraInitialized
+                ? CameraPreview(cameraController)
                 : const Center(child: CircularProgressIndicator()),
           ),
 
@@ -99,7 +85,7 @@ class TranslateScreenState extends State<TranslateScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withAlpha(75),
                   blurRadius: 8,
                   offset: const Offset(0, -2),
                 ),

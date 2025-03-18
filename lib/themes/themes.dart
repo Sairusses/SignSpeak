@@ -12,6 +12,11 @@ class MyThemes {
     final Color errorColor = Colors.red.shade700;
     final Color onColor = Color(0xffEEEEEE);
     return ThemeData(
+      textSelectionTheme: TextSelectionThemeData(
+        selectionColor: primaryColor.withAlpha(102),
+        cursorColor: primaryColor,
+        selectionHandleColor: primaryColor,
+      ),
       highlightColor: primaryColor,
       focusColor: primaryColor,
       brightness: Brightness.dark,
