@@ -14,8 +14,6 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   final PersistentTabController _controller = PersistentTabController(initialIndex: 0);
-  late CameraController cameraController;
-  bool _isCameraInitialized = false;
 
   List<PersistentBottomNavBarItem> _navBarsItems() {
     return [
@@ -42,34 +40,14 @@ class HomeState extends State<Home> {
   List<Widget> _buildScreens() {
     return [
       HomeScreen(),
-      TranslateScreen(cameraController: cameraController, isCameraInitialized: _isCameraInitialized),
+      TranslateScreen(),
       ProfileScreen(),
     ];
   }
 
-
-
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
-  }
-
-  Future<void> _initializeCamera() async {
-    final cameras = await availableCameras();
-    if (cameras.isNotEmpty) {
-      cameraController = CameraController(
-        cameras[0], // Use the first available camera
-        ResolutionPreset.medium,
-      );
-
-      await cameraController.initialize();
-      if (!mounted) return;
-
-      setState(() {
-        _isCameraInitialized = true;
-      });
-    }
   }
 
   @override

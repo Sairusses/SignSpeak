@@ -2,117 +2,126 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 
 class TranslateScreen extends StatefulWidget {
-  final CameraController cameraController;
-  final bool isCameraInitialized;
-  const TranslateScreen({super.key, required this.cameraController, required this.isCameraInitialized});
+  const TranslateScreen({super.key});
 
   @override
   TranslateScreenState createState() => TranslateScreenState();
 }
 
 class TranslateScreenState extends State<TranslateScreen> {
-  get cameraController => widget.cameraController;
-  get isCameraInitialized => widget.isCameraInitialized;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('SignSpeak'),
+        centerTitle: true,
+        leading: IconButton(onPressed: (){}, icon: Icon(Icons.flash_on)),
+        actions: [
+          IconButton(onPressed: (){}, icon: Icon(Icons.settings))
+        ],
+      ),
+      body: Column(
+        children: [
+          CameraPreviewWidget()
+        ],
+      ),
+    );
+  }
+}
+
+class CameraPreviewWidget extends StatefulWidget {
+  const CameraPreviewWidget({super.key});
+  @override
+  CameraPreviewWidgetState createState() => CameraPreviewWidgetState();
+}
+
+class CameraPreviewWidgetState extends State<CameraPreviewWidget> {
+  late CameraController _cameraController;
+  bool _isCameraInitialized = false;
   bool _isRecording = false;
-  String _translatedText = "Translated text will appear here...";
 
   @override
   void initState() {
     super.initState();
+    _initializeCamera();
   }
 
+  Future<void> _initializeCamera() async {
+    final cameras = await availableCameras();
+    if (cameras.isNotEmpty) {
+      _cameraController = CameraController(
+        cameras[0],
+        ResolutionPreset.medium,
+      );
 
+      await _cameraController.initialize();
+      if (!mounted) return;
 
-  Future<void> _startRecording() async {
-    if (!_isRecording) {
-      await cameraController.startVideoRecording();
       setState(() {
-        _isRecording = true;
-      });
-    }
-  }
-
-  Future<void> _stopRecording() async {
-    if (_isRecording) {
-      final file = await cameraController.stopVideoRecording();
-      setState(() {
-        _isRecording = false;
-        _translatedText = "Processing video..."; // Simulated processing
-      });
-
-      // TODO: Process video and update translated text
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() {
-          _translatedText = "Hello, how are you?"; // Simulated translation result
-        });
+        _isCameraInitialized = true;
       });
     }
   }
 
   @override
   void dispose() {
-    cameraController.dispose();
+    _cameraController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-
-    return Scaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Camera Preview (60% of screen)
-          SizedBox(
-            height: screenHeight * 0.6,
-            width: double.infinity,
-            child: isCameraInitialized
-                ? CameraPreview(cameraController)
-                : const Center(child: CircularProgressIndicator()),
-          ),
-
-          // Translated Text Display (20% of screen)
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Column(
+      children: [
+        SizedBox(
+          height: screenHeight * 0.5,
+          width: screenWidth,
+          child:
+          // _isCameraInitialized
+          //     ? CameraPreview(_cameraController) :
           Container(
-            height: screenHeight * 0.2,
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(30),
-                topRight: Radius.circular(30),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(75),
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                _translatedText,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
+            color: Colors.black,
+            height: screenHeight * 0.5,
+            width: screenWidth,
+            child: Center(child: CircularProgressIndicator()),
           ),
-        ],
-      ),
-
-      // Floating record button
-      floatingActionButton: FloatingActionButton(
-        onPressed: _isRecording ? _stopRecording : _startRecording,
-        backgroundColor: _isRecording ? Colors.red : Colors.blue,
-        child: Icon(_isRecording ? Icons.stop : Icons.videocam),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () {
+                  // Handle import video
+                  print('Import video pressed');
+                },
+                icon: Icon(Icons.video_library),
+                iconSize: 40,
+              ),
+              SizedBox(width: 32),
+              IconButton(
+                onPressed: (){},
+                icon: Icon(_isRecording ? Icons.stop_circle : Icons.circle),
+                color: _isRecording ? Colors.red : Colors.white,
+                iconSize: 60,
+              ),
+              SizedBox(width: 32),
+              IconButton(
+                onPressed: (){},
+                icon: Icon(Icons.flip_camera_ios),
+                iconSize: 40,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
