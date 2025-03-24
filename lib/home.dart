@@ -1,6 +1,6 @@
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
+import 'package:signspeak/translator/camera_screen.dart';
 import '../main_screens/interaction_screen.dart';
 import '../main_screens/home_screen.dart';
 import '../main_screens/profile_screen.dart';
@@ -14,44 +14,36 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   final PersistentTabController _controller = PersistentTabController(initialIndex: 0);
-  final ScrollController scrollController = ScrollController();
 
   List<PersistentBottomNavBarItem> _navBarsItems() {
     return [
       PersistentBottomNavBarItem(
-        icon: Icon(Icons.home),
-        title: ('Home'),
-        scrollController: scrollController,
+        icon: const Icon(Icons.home),
+        title: 'Home',
         activeColorPrimary: Theme.of(context).colorScheme.primary,
-        inactiveColorPrimary:  Theme.of(context).colorScheme.onPrimary,
+        inactiveColorPrimary: Theme.of(context).colorScheme.onPrimary,
       ),
       PersistentBottomNavBarItem(
-        icon: Icon(Icons.front_hand),
-        title: ('Translate'),
-        scrollController: scrollController,
+        icon: const Icon(Icons.front_hand),
+        title: 'Translate',
         activeColorPrimary: Theme.of(context).colorScheme.primary,
-        inactiveColorPrimary:  Theme.of(context).colorScheme.onPrimary,
+        inactiveColorPrimary: Theme.of(context).colorScheme.onPrimary,
       ),
       PersistentBottomNavBarItem(
-        icon: Icon(Icons.person),
-        title: ('Profile'),
-        scrollController: scrollController,
+        icon: const Icon(Icons.person),
+        title: 'Profile',
         activeColorPrimary: Theme.of(context).colorScheme.primary,
-        inactiveColorPrimary:  Theme.of(context).colorScheme.onPrimary,
+        inactiveColorPrimary: Theme.of(context).colorScheme.onPrimary,
       ),
     ];
   }
+
   List<Widget> _buildScreens() {
-    return [
+    return const [
       HomeScreen(),
       InteractionScreen(),
       ProfileScreen(),
     ];
-  }
-
-  @override
-  void initState() {
-    super.initState();
   }
 
   @override

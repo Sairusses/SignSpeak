@@ -24,7 +24,7 @@ class MyThemes {
       colorScheme: ColorScheme(
           brightness: Brightness.dark,
           primary: primaryColor,
-          onPrimary:  onColor,
+          onPrimary: onColor,
           secondary: secondaryColor,
           onSecondary: onColor,
           error: errorColor,
@@ -62,34 +62,4 @@ class MyThemes {
     );
   }
 
-  // Light Theme
-  ThemeData get lightTheme {
-    return ThemeData(
-      brightness: Brightness.light,
-      primaryColor: Color(0xff3F72AF),
-      scaffoldBackgroundColor: Color(0xffF9F7F7),
-      appBarTheme: AppBarTheme(
-        backgroundColor: Color(0xffDBE2EF),
-        titleTextStyle: TextStyle(color: Color(0xff112D4E), fontSize: 20),
-        iconTheme: IconThemeData(color: Color(0xff112D4E)),
-      ),
-      textTheme: TextTheme(
-        bodyLarge: TextStyle(color: Color(0xff112D4E)),
-        bodyMedium: TextStyle(color: Color(0xff112D4E)),
-      ),
-      iconTheme: IconThemeData(color: Color(0xff3F72AF)),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xff3F72AF),
-          foregroundColor: Color(0xffF9F7F7),
-          textStyle: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: Color(0xffDBE2EF),
-        selectedItemColor: Color(0xff112D4E),
-        unselectedItemColor: Color(0xff3F72AF),
-      ),
-    );
-  }
 }

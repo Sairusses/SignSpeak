@@ -26,7 +26,7 @@ class InteractionScreenState extends State<InteractionScreen> {
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const CameraScreen()),
+              MaterialPageRoute(builder: (context) => CameraScreen()),
             );
           },
           child: const Text('Camera Screen'),
