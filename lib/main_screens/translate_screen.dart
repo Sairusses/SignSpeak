@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
+import 'package:camerawesome/camerawesome_plugin.dart';
+import 'package:camerawesome/pigeon.dart';
 
 class TranslateScreen extends StatefulWidget {
   const TranslateScreen({super.key});
@@ -12,8 +13,6 @@ class TranslateScreenState extends State<TranslateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(
@@ -26,7 +25,15 @@ class TranslateScreenState extends State<TranslateScreen> {
       ),
       body: Column(
         children: [
-
+          CameraAwesomeBuilder.awesome(
+            saveConfig: SaveConfig.video(),
+            sensorConfig: SensorConfig.single(
+              aspectRatio: CameraAspectRatios.ratio_4_3,
+              flashMode: FlashMode.auto,
+              sensor: Sensor.position(SensorPosition.back),
+              zoom: 0.0,
+            ),
+          )
         ],
       ),
     );
