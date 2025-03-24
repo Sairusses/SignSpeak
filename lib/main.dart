@@ -7,7 +7,7 @@ import 'home.dart';
 
 void main() {
   // ignore: dead_code
-  if(!kReleaseMode){
+  if(!kDebugMode){
     runApp(
       DevicePreview(
           builder: (context) => DevicePrev()

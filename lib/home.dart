@@ -1,7 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
-import '../main_screens/translate_screen.dart';
+import '../main_screens/interaction_screen.dart';
 import '../main_screens/home_screen.dart';
 import '../main_screens/profile_screen.dart';
 
@@ -14,24 +14,28 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   final PersistentTabController _controller = PersistentTabController(initialIndex: 0);
+  final ScrollController scrollController = ScrollController();
 
   List<PersistentBottomNavBarItem> _navBarsItems() {
     return [
       PersistentBottomNavBarItem(
         icon: Icon(Icons.home),
         title: ('Home'),
+        scrollController: scrollController,
         activeColorPrimary: Theme.of(context).colorScheme.primary,
         inactiveColorPrimary:  Theme.of(context).colorScheme.onPrimary,
       ),
       PersistentBottomNavBarItem(
-        icon: Icon(Icons.add),
+        icon: Icon(Icons.front_hand),
         title: ('Translate'),
+        scrollController: scrollController,
         activeColorPrimary: Theme.of(context).colorScheme.primary,
         inactiveColorPrimary:  Theme.of(context).colorScheme.onPrimary,
       ),
       PersistentBottomNavBarItem(
         icon: Icon(Icons.person),
         title: ('Profile'),
+        scrollController: scrollController,
         activeColorPrimary: Theme.of(context).colorScheme.primary,
         inactiveColorPrimary:  Theme.of(context).colorScheme.onPrimary,
       ),
@@ -40,7 +44,7 @@ class HomeState extends State<Home> {
   List<Widget> _buildScreens() {
     return [
       HomeScreen(),
-      TranslateScreen(),
+      InteractionScreen(),
       ProfileScreen(),
     ];
   }
