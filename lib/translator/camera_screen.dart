@@ -18,7 +18,7 @@ class CameraScreen extends StatelessWidget {
               color: Colors.transparent,
               shape: const CircleBorder(),
               child: InkWell(
-                splashColor: Theme.of(context).colorScheme.primary,
+                splashColor: Theme.of(context).colorScheme.onPrimary,
                 highlightColor: Colors.cyan.withValues(alpha: 0.5),
                 onTap: onTap,
                 child: child,
