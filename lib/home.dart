@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
-import 'package:signspeak/translator/camera_screen.dart';
 import '../main_screens/interaction_screen.dart';
 import '../main_screens/home_screen.dart';
 import '../main_screens/profile_screen.dart';

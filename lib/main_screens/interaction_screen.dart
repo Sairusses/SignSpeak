@@ -15,11 +15,7 @@ class InteractionScreenState extends State<InteractionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SignSpeak'),
-        centerTitle: true,
-        leading: IconButton(onPressed: () {}, icon: const Icon(Icons.flash_on)),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.settings)),
-        ],
+        centerTitle: false,
       ),
       body: Center(
         child: ElevatedButton(

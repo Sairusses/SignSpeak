@@ -10,7 +10,7 @@ class CameraScreen extends StatelessWidget {
       buttonTheme: AwesomeButtonTheme(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         iconSize: 20,
-        foregroundColor: Colors.white,
+        foregroundColor: Theme.of(context).colorScheme.secondary,
         padding: const EdgeInsets.all(16),
         buttonBuilder: (child, onTap) {
           return ClipOval(
