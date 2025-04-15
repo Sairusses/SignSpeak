@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:signspeak/themes/themes.dart';
 import 'package:device_preview/device_preview.dart';
@@ -5,17 +6,13 @@ import 'package:device_preview/device_preview.dart';
 import 'home.dart';
 
 void main() {
-  // ignore: dead_code
-  if(false){
+  if(kDebugMode){
     runApp(
       DevicePreview(
-          builder: (context) => DevicePrev()
+        enabled: kDebugMode,
+        builder: (context) => DevicePrev()
       ),
     );
-  }
-  // ignore: dead_code
-  else {
-    runApp(const MyApp());
   }
 }
 
@@ -26,7 +23,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SignSpeak',
-      theme: MyThemes().darkTheme,
+      theme: MyThemes().lightTheme,
       darkTheme: MyThemes().darkTheme,
       debugShowCheckedModeBanner: false,
       home: Home(),
@@ -43,7 +40,7 @@ class DevicePrev extends StatelessWidget {
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
       title: 'SignSpeak',
-      theme: MyThemes().darkTheme,
+      theme: MyThemes().lightTheme,
       darkTheme: MyThemes().darkTheme,
       home: Home(),
     );

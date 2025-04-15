@@ -36,8 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
   device_preview: ^1.2.0
-  persistent_bottom_nav_bar: ^6.2.1
   camerawesome: ^2.3.0
+  animated_bottom_navigation_bar: ^1.4.0
+  circular_reveal_animation: ^2.0.1
 
 dev_dependencies:
   flutter_test:

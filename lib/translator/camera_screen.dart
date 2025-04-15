@@ -1,4 +1,5 @@
 import 'package:camerawesome/camerawesome_plugin.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class CameraScreen extends StatelessWidget {
@@ -30,8 +31,10 @@ class CameraScreen extends StatelessWidget {
     );
     return Scaffold(
       body: CameraAwesomeBuilder.awesome(
-      saveConfig: SaveConfig.photoAndVideo(),
-      theme: theme,
-    ));
+        saveConfig: SaveConfig.video(),
+        progressIndicator: Center(child: CupertinoActivityIndicator(color: Theme.of(context).secondaryHeaderColor),),
+        theme: theme,
+      )
+    );
   }
 }
