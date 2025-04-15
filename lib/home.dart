@@ -25,23 +25,23 @@ class HomeState extends State<Home>{
           selectedIndex: currentPageIndex,
           destinations: const <Widget>[
             NavigationDestination(
-              selectedIcon: Icon(Icons.home, color: Colors.white,),
-              icon: Icon(Icons.home_outlined, color: Colors.black),
+              selectedIcon: Icon(Icons.home,),
+              icon: Icon(Icons.home_outlined,),
               label: 'Home',
             ),
             NavigationDestination(
-              selectedIcon: Icon(Icons.chat_bubble_rounded, color: Colors.white),
-              icon: Icon(Icons.chat_bubble_outline_rounded, color: Colors.black),
+              selectedIcon: Icon(Icons.chat_bubble_rounded),
+              icon: Icon(Icons.chat_bubble_outline_rounded),
               label: 'Interact',
             ),
             NavigationDestination(
-              selectedIcon: Icon(Icons.bookmark_rounded, color: Colors.white),
-              icon: Icon(Icons.bookmark_outline_rounded, color: Colors.black),
+              selectedIcon: Icon(Icons.bookmark_rounded, ),
+              icon: Icon(Icons.bookmark_outline_rounded, ),
               label: 'Library',
             ),
             NavigationDestination(
-              selectedIcon: Icon(Icons.person, color: Colors.white),
-              icon: Icon(Icons.person_outline, color: Colors.black),
+              selectedIcon: Icon(Icons.person,),
+              icon: Icon(Icons.person_outline,),
               label: 'Profile',
             ),
           ]

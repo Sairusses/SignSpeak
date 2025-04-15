@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class MyThemes {
-  // Common colors
+
+  //light theme colors
   static const Color black = Colors.black;
   static const Color white = Colors.white;
-  static const Color selectionColor = Colors.blueAccent;
-  static const Color errorColor = Colors.red;
+  static const Color blueAccent = Colors.blueAccent;
+  static const Color red = Colors.red;
+
+  //dark theme colors
+  static const Color dark = Color(0x33333333);
+  static const Color grey = Color(0x8C8C8C8C);
 
   // Light Theme
   ThemeData get lightTheme {
@@ -16,19 +21,19 @@ class MyThemes {
       scaffoldBackgroundColor: white,
       secondaryHeaderColor: black,
       textSelectionTheme: TextSelectionThemeData(
-        selectionColor: selectionColor.withAlpha(102),
-        cursorColor: selectionColor,
-        selectionHandleColor: selectionColor,
+        selectionColor: blueAccent.withAlpha(102),
+        cursorColor: blueAccent,
+        selectionHandleColor: blueAccent,
       ),
-      highlightColor: selectionColor,
-      focusColor: selectionColor,
+      highlightColor: blueAccent,
+      focusColor: blueAccent,
       colorScheme: const ColorScheme(
         brightness: Brightness.light,
         primary: black,
         onPrimary: white,
         secondary: white,
         onSecondary: black,
-        error: errorColor,
+        error: red,
         onError: white,
         surface: white,
         onSurface: black,
@@ -61,10 +66,14 @@ class MyThemes {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: white,
         indicatorColor: black,
-        indicatorShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+        indicatorShape: CircleBorder(),
+        iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((Set<WidgetState> states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: white);
+          }
+          return const IconThemeData(color: black);
+        }),
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         labelTextStyle: WidgetStateProperty.all(
           TextStyle(
             color: black,
@@ -74,6 +83,9 @@ class MyThemes {
           ),
         ),
       ),
+      navigationDrawerTheme: NavigationDrawerThemeData(
+
+      ),
     );
   }
 
@@ -82,24 +94,24 @@ class MyThemes {
     return ThemeData(
       brightness: Brightness.dark,
       primaryColor: white,
-      scaffoldBackgroundColor: black,
+      scaffoldBackgroundColor: dark,
       secondaryHeaderColor: white,
       textSelectionTheme: TextSelectionThemeData(
-        selectionColor: selectionColor.withAlpha(102),
-        cursorColor: selectionColor,
-        selectionHandleColor: selectionColor,
+        selectionColor: blueAccent.withAlpha(102),
+        cursorColor: blueAccent,
+        selectionHandleColor: blueAccent,
       ),
-      highlightColor: selectionColor,
-      focusColor: selectionColor,
+      highlightColor: blueAccent,
+      focusColor: blueAccent,
       colorScheme: const ColorScheme(
         brightness: Brightness.dark,
         primary: white,
         onPrimary: black,
-        secondary: black,
+        secondary: dark,
         onSecondary: white,
-        error: errorColor,
+        error: red,
         onError: black,
-        surface: black,
+        surface: dark,
         onSurface: white,
       ),
       appBarTheme: AppBarTheme(
@@ -127,11 +139,26 @@ class MyThemes {
           textStyle: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: black,
-        selectedItemColor: white,
-        unselectedItemColor: Colors.grey.shade700,
-      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: dark,
+        indicatorColor: white,
+        indicatorShape: CircleBorder(),
+        iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((Set<WidgetState> states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: Colors.black);
+          }
+          return const IconThemeData(color: Colors.white);
+        }),
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        labelTextStyle: WidgetStateProperty.all(
+          TextStyle(
+            color: white,
+            fontSize: 12,
+            fontFamily: GoogleFonts.roboto().fontFamily,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      )
     );
   }
 }
