@@ -39,6 +39,7 @@ dependencies:
   camerawesome: ^2.3.0
   animated_bottom_navigation_bar: ^1.4.0
   circular_reveal_animation: ^2.0.1
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
 import '../translator/camera_screen.dart';
+
+
 
 class InteractionScreen extends StatefulWidget {
   const InteractionScreen({super.key});

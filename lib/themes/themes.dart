@@ -12,6 +12,7 @@ class MyThemes {
   //dark theme colors
   static const Color dark = Color(0x33333333);
   static const Color grey = Color(0x8C8C8C8C);
+  static const Color offWhite = Color.fromARGB(255, 250, 249, 246);
 
   // Light Theme
   ThemeData get lightTheme {
@@ -83,9 +84,6 @@ class MyThemes {
           ),
         ),
       ),
-      navigationDrawerTheme: NavigationDrawerThemeData(
-
-      ),
     );
   }
 
@@ -93,9 +91,9 @@ class MyThemes {
   ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      primaryColor: white,
+      primaryColor: offWhite,
       scaffoldBackgroundColor: dark,
-      secondaryHeaderColor: white,
+      secondaryHeaderColor: offWhite,
       textSelectionTheme: TextSelectionThemeData(
         selectionColor: blueAccent.withAlpha(102),
         cursorColor: blueAccent,
@@ -105,57 +103,56 @@ class MyThemes {
       focusColor: blueAccent,
       colorScheme: const ColorScheme(
         brightness: Brightness.dark,
-        primary: white,
-        onPrimary: black,
+        primary: grey,
+        onPrimary: offWhite,
         secondary: dark,
-        onSecondary: white,
+        onSecondary: offWhite,
         error: red,
         onError: black,
         surface: dark,
-        onSurface: white,
+        onSurface: offWhite,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: black,
-        iconTheme: IconThemeData(color: white),
+        backgroundColor: dark,
+        iconTheme: IconThemeData(color: offWhite),
         titleTextStyle: TextStyle(
-          color: white,
+          color: offWhite,
           fontSize: 20,
           fontFamily: GoogleFonts.roboto().fontFamily,
         ),
       ),
       textTheme: TextTheme(
-        titleLarge: TextStyle(color: white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
-        titleMedium: TextStyle(color: white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
-        titleSmall: TextStyle(color: white, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
-        bodyLarge: TextStyle(color: white, fontSize: 20, fontFamily: GoogleFonts.roboto().fontFamily),
-        bodyMedium: TextStyle(color: white, fontSize: 16, fontFamily: GoogleFonts.roboto().fontFamily),
-        bodySmall: TextStyle(color: white, fontSize: 12, fontFamily: GoogleFonts.roboto().fontFamily),
+        titleLarge: TextStyle(color: offWhite, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
+        titleMedium: TextStyle(color: offWhite, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
+        titleSmall: TextStyle(color: offWhite, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
+        bodyLarge: TextStyle(color: offWhite, fontSize: 20, fontFamily: GoogleFonts.roboto().fontFamily),
+        bodyMedium: TextStyle(color: offWhite, fontSize: 16, fontFamily: GoogleFonts.roboto().fontFamily),
+        bodySmall: TextStyle(color: offWhite, fontSize: 12, fontFamily: GoogleFonts.roboto().fontFamily),
       ),
-      iconTheme: IconThemeData(color: white),
+      iconTheme: IconThemeData(color: offWhite),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: white,
-          foregroundColor: black,
+          backgroundColor: grey,
+          foregroundColor: offWhite,
           textStyle: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: dark,
-        indicatorColor: white,
+        indicatorColor: grey,
         indicatorShape: CircleBorder(),
         iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((Set<WidgetState> states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: Colors.black);
+            return const IconThemeData(color: black);
           }
-          return const IconThemeData(color: Colors.white);
+          return const IconThemeData(color: Colors.grey);
         }),
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         labelTextStyle: WidgetStateProperty.all(
           TextStyle(
-            color: white,
+            color: offWhite,
             fontSize: 12,
             fontFamily: GoogleFonts.roboto().fontFamily,
-            fontWeight: FontWeight.bold,
           ),
         ),
       )
