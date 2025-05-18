@@ -12,7 +12,7 @@ class MyThemes {
   //dark theme colors
   static const Color dark = Color(0x33333333);
   static const Color grey = Color(0x8C8C8C8C);
-  static const Color offWhite = Color.fromARGB(255, 250, 249, 246);
+  static const Color boneWhite = Color(0xFFF9F6EE);
 
   // Light Theme
   ThemeData get lightTheme {
@@ -91,9 +91,9 @@ class MyThemes {
   ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      primaryColor: offWhite,
+      primaryColor: boneWhite,
       scaffoldBackgroundColor: dark,
-      secondaryHeaderColor: offWhite,
+      secondaryHeaderColor: boneWhite,
       textSelectionTheme: TextSelectionThemeData(
         selectionColor: blueAccent.withAlpha(102),
         cursorColor: blueAccent,
@@ -104,36 +104,36 @@ class MyThemes {
       colorScheme: const ColorScheme(
         brightness: Brightness.dark,
         primary: grey,
-        onPrimary: offWhite,
+        onPrimary: boneWhite,
         secondary: dark,
-        onSecondary: offWhite,
+        onSecondary: boneWhite,
         error: red,
         onError: black,
         surface: dark,
-        onSurface: offWhite,
+        onSurface: boneWhite,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: dark,
-        iconTheme: IconThemeData(color: offWhite),
+        iconTheme: IconThemeData(color: boneWhite),
         titleTextStyle: TextStyle(
-          color: offWhite,
+          color: boneWhite,
           fontSize: 20,
           fontFamily: GoogleFonts.roboto().fontFamily,
         ),
       ),
       textTheme: TextTheme(
-        titleLarge: TextStyle(color: offWhite, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
-        titleMedium: TextStyle(color: offWhite, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
-        titleSmall: TextStyle(color: offWhite, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
-        bodyLarge: TextStyle(color: offWhite, fontSize: 20, fontFamily: GoogleFonts.roboto().fontFamily),
-        bodyMedium: TextStyle(color: offWhite, fontSize: 16, fontFamily: GoogleFonts.roboto().fontFamily),
-        bodySmall: TextStyle(color: offWhite, fontSize: 12, fontFamily: GoogleFonts.roboto().fontFamily),
+        titleLarge: TextStyle(color: boneWhite, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
+        titleMedium: TextStyle(color: boneWhite, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
+        titleSmall: TextStyle(color: boneWhite, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.roboto().fontFamily),
+        bodyLarge: TextStyle(color: boneWhite, fontSize: 20, fontFamily: GoogleFonts.roboto().fontFamily),
+        bodyMedium: TextStyle(color: boneWhite, fontSize: 16, fontFamily: GoogleFonts.roboto().fontFamily),
+        bodySmall: TextStyle(color: boneWhite, fontSize: 12, fontFamily: GoogleFonts.roboto().fontFamily),
       ),
-      iconTheme: IconThemeData(color: offWhite),
+      iconTheme: IconThemeData(color: boneWhite),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: grey,
-          foregroundColor: offWhite,
+          foregroundColor: boneWhite,
           textStyle: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
@@ -150,7 +150,7 @@ class MyThemes {
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         labelTextStyle: WidgetStateProperty.all(
           TextStyle(
-            color: offWhite,
+            color: boneWhite,
             fontSize: 12,
             fontFamily: GoogleFonts.roboto().fontFamily,
           ),

@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import '../translator/camera_screen.dart';
-
-
 
 class InteractionScreen extends StatefulWidget {
   const InteractionScreen({super.key});
@@ -19,15 +16,7 @@ class InteractionScreenState extends State<InteractionScreen> {
         centerTitle: false,
       ),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => CameraScreen()),
-            );
-          },
-          child: const Text('Camera Screen'),
-        ),
+        child: const Text(' Camera Screen'),
       ),
     );
   }

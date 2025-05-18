@@ -10,7 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await loadThemePreference();
 
-  if (kDebugMode) {
+  if(kIsWeb){
     runApp(
       DevicePreview(
         enabled: kDebugMode,
