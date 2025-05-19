@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 class InteractionScreen extends StatefulWidget {
   const InteractionScreen({super.key});
@@ -7,17 +9,33 @@ class InteractionScreen extends StatefulWidget {
   InteractionScreenState createState() => InteractionScreenState();
 }
 
-class InteractionScreenState extends State<InteractionScreen> {
+class InteractionScreenState extends State<InteractionScreen> with AutomaticKeepAliveClientMixin{
+  late final WebViewController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 👇 Set Android implementation if on Android
+    late final PlatformWebViewControllerCreationParams params;
+    WebViewPlatform.instance = AndroidWebViewPlatform();
+
+    params = const PlatformWebViewControllerCreationParams();
+
+    _controller = WebViewController.fromPlatformCreationParams(params)
+      ..loadRequest(Uri.parse('https://sign.mt'))
+      ..setJavaScriptMode(JavaScriptMode.unrestricted);
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('SignSpeak'),
-        centerTitle: false,
-      ),
-      body: Center(
-        child: const Text(' Camera Screen'),
-      ),
+      appBar: AppBar(title: const Text('SignSpeak')),
+      body: WebViewWidget(controller: _controller),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
