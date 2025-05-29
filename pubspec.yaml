@@ -50,6 +50,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-assets:
- - assets/alphabets.tflite
- - assets/hand_landmark.tflite
+  assets:
+    - assets/alphabets.tflite
+    - assets/hand_landmark.tflite
+    - assets/1.tflite
+

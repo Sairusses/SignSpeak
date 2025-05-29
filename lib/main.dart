@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:signspeak/themes/themes.dart';
 import 'package:device_preview/device_preview.dart';
@@ -9,8 +8,7 @@ import 'main_screens/profile_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await loadThemePreference();
-
-    runApp(const MyApp());
+  runApp(const MyApp());
 
 }
 
