@@ -22,7 +22,12 @@ class InteractionScreenState extends State<InteractionScreen> with AutomaticKeep
 
     params = const PlatformWebViewControllerCreationParams();
 
-    _controller = WebViewController.fromPlatformCreationParams(params)
+    _controller = WebViewController.fromPlatformCreationParams(
+      params,
+      onPermissionRequest: (request) {
+        request.grant();
+      },
+    )
       ..loadRequest(Uri.parse('https://sign.mt'))
       ..setJavaScriptMode(JavaScriptMode.unrestricted);
   }

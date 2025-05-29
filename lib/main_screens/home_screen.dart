@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,22 +14,46 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin{
   CameraController? controller;
   List<CameraDescription>? cameras;
   bool isCameraInitialized = false;
+  bool _isRecording = false;
+  int _selectedCameraIndex = 1;
+  late XFile video;
+  late AnimationController _rotationController;
+  late Animation<double> _rotationAnimation;
 
   @override
   void initState() {
     super.initState();
-    initializeCamera();
+    _rotationController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _rotationAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut),
+    );
+    initializeCamera(_selectedCameraIndex);
+    requestPermissions();
+  }
+  Future<void> requestPermissions() async {
+    await Permission.camera.request();
+    await Permission.microphone.request();
   }
 
-  Future<void> initializeCamera() async {
+  @override
+  void dispose() {
+    controller?.dispose();
+    _rotationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> initializeCamera(int cameraIndex) async {
     cameras = await availableCameras();
     if (cameras != null && cameras!.isNotEmpty) {
       controller = CameraController(
-        cameras![1], // front or back camera depending on your use case
+        cameras![_selectedCameraIndex],
         ResolutionPreset.medium,
         enableAudio: false,
       );
@@ -38,10 +67,26 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    controller?.dispose();
-    super.dispose();
+  Future<void> _startVideoRecording() async {
+    if (controller == null || controller!.value.isRecordingVideo) return;
+
+    final Directory tempDir = await getTemporaryDirectory();
+    final String filePath = path.join(tempDir.path, '${DateTime.now().millisecondsSinceEpoch}.mp4');
+
+    await controller!.startVideoRecording();
+  }
+
+  Future<void> _stopVideoRecording() async {
+    if (controller == null || !controller!.value.isRecordingVideo) return;
+
+    video = await controller!.stopVideoRecording();
+  }
+
+  Future<void> _switchCamera() async {
+    if (cameras!.length < 2 || cameras == null) return;
+
+    _selectedCameraIndex = (_selectedCameraIndex == 0) ? 1 : 0;
+    await initializeCamera(_selectedCameraIndex);
   }
 
   Widget cameraWidget(CameraController? cameraController) {
@@ -58,17 +103,41 @@ class HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton.filled(
+                  IconButton.filledTonal(
                       onPressed: (){},
                       icon: Icon(CupertinoIcons.photo, color: Colors.white, size: 35)
                   ),
-                  IconButton.filled(
-                      onPressed: (){},
-                      icon: Icon(CupertinoIcons.circle_fill, color: Colors.white, size: 35)
+                  IconButton.filledTonal(
+                    onPressed: () async {
+                      if (_isRecording) {
+                        await _stopVideoRecording();
+                      } else {
+                        await _startVideoRecording();
+                      }
+                      setState(() {
+                        _isRecording = !_isRecording;
+                      });
+                    },
+                    icon: Icon(
+                      _isRecording ? CupertinoIcons.stop_circle : CupertinoIcons.circle_fill,
+                      color: _isRecording? Colors.red : Colors.white,
+                      size: 35,
+                    ),
                   ),
-                  IconButton.filled(
-                      onPressed: (){},
-                      icon: Icon(CupertinoIcons.switch_camera_solid, color: Colors.white, size: 35)
+                  AnimatedBuilder(
+                    animation: _rotationAnimation,
+                    builder: (context, child) {
+                      return Transform.rotate(
+                        angle: _rotationAnimation.value * 6.28, // 180 degrees
+                        child: IconButton.filledTonal(
+                          onPressed: () async {
+                            await _rotationController.forward(from: 0);
+                            _switchCamera();
+                          },
+                          icon: Icon(CupertinoIcons.switch_camera_solid, color: Colors.white, size: 35),
+                        ),
+                      );
+                    },
                   ),
                 ]
               )

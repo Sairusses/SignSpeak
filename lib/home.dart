@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:signspeak/main_screens/interaction_screen.dart';
 import 'package:signspeak/main_screens/profile_screen.dart';
 import 'main_screens/home_screen.dart';
@@ -19,6 +20,7 @@ class HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
+    requestPermissions(); 
     _pageController = PageController(initialPage: currentPageIndex);
   }
 
@@ -26,6 +28,11 @@ class HomeState extends State<Home> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> requestPermissions() async {
+    await Permission.camera.request();
+    await Permission.microphone.request();
   }
 
   void onPageChanged(int index) {
