@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+
 import 'package:signspeak/pages/profile-page.dart';
 import 'package:signspeak/pages/sign-to-text-page.dart';
 import 'package:signspeak/pages/text-to-sign-page.dart';
 import 'package:signspeak/pages/upload-page.dart';
+
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -55,6 +57,24 @@ class HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "SignSpeak",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        scrolledUnderElevation: 0,
+        leading: const Icon(Icons.translate),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: Icon(Icons.settings),
+          ),
+        ],
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(0.5),
+          child: Divider(height: 0.5, thickness: 0.3),
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         backgroundColor: Colors.white,
         elevation: 2.0,
