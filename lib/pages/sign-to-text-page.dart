@@ -308,67 +308,104 @@ class _SignToTextPageState extends State<SignToTextPage>
                 ),
               ),
             ),
-            const Gap(20),
-
-            // Camera Preview
-            AspectRatio(
-              aspectRatio: 4 / 5,
-              child: Stack(
-                children: [
-                  CameraPreview(cameraController!),
-                  Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: AnimatedBuilder(
-                      animation: _rotationAnimation,
-                      builder: (context, child) {
-                        return Transform.rotate(
-                          angle: _rotationAnimation.value * 6.28,
-                          child: IconButton.filledTonal(
-                            onPressed: () async {
-                              await _rotationController.forward(from: 0);
-                              _switchCamera();
-                            },
-                            icon: const Icon(
-                                CupertinoIcons.switch_camera_solid,
-                                color: Colors.white,
-                                size: 35),
+            const Gap(8),
+            Stack(
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * .8,
+                    height: MediaQuery.of(context).size.height * .5,
+                    child: ClipRRect( // Clip to a rounded rectangle if needed
+                      borderRadius: BorderRadius.circular(15.0),
+                      child: Stack(
+                        children: <Widget>[
+                          Positioned.fill(
+                            child: AspectRatio(
+                              aspectRatio: cameraController!.value.aspectRatio,
+                              child: CameraPreview(cameraController!),
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  if(selectedMode == 0)
-                    Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Prediction: $_predictedChar',
-                              style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold)),
-                          Text(
-                              'Confidence: ${(_confidence * 100).toStringAsFixed(2)}%',
-                              style: const TextStyle(
-                                  color: Colors.black54, fontSize: 16)),
                         ],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                // switch camera
+                Positioned(
+                  bottom: 10,
+                  right: 30,
+                  child: AnimatedBuilder(
+                    animation: _rotationAnimation,
+                    builder: (context, child) {
+                      return Transform.rotate(
+                        angle: _rotationAnimation.value * 6.28,
+                        child: IconButton(
+                          onPressed: () async {
+                            await _rotationController.forward(from: 0);
+                            _switchCamera();
+                          },
+                          icon: const Icon(
+                              CupertinoIcons.switch_camera_solid,
+                              color: Colors.white,
+                              size: 35),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                // show record button if in RUNTIME mode
+                if (selectedMode == 1)
+                  Positioned(
+                    bottom: 10,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: IconButton.outlined(
+                        icon: Icon(
+                          _isRecording ? Icons.stop : Icons.fiber_manual_record,
+                          color: _isRecording ? Colors.white : Colors.red,
+                          size: 55,
+                        ),
+                        onPressed: () {
+                          if (_isRecording) {
+                            _stopVideoRecording();
+                          } else {
+                            _startVideoRecording();
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                // Show translation prediction if in REAL-TIME mode
+                if(selectedMode == 0)
+                  Positioned(
+                  top: 10,
+                  left: 40,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Prediction: $_predictedChar',
+                            style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
+                        Text(
+                            'Confidence: ${(_confidence * 100).toStringAsFixed(2)}%',
+                            style: const TextStyle(
+                                color: Colors.black54, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const Gap(20),
-
             // Translation Section
             SizedBox(
               width: MediaQuery.of(context).size.width,
@@ -395,26 +432,7 @@ class _SignToTextPageState extends State<SignToTextPage>
                 ),
               ),
             ),
-            const Gap(20),
-
-            // Record Button (only for Runtime)
-            if (selectedMode == 1)
-              Center(
-                child: FloatingActionButton.extended(
-                  backgroundColor:
-                  _isRecording ? Colors.red : Colors.purple,
-                  icon: Icon(
-                      _isRecording ? Icons.stop : Icons.fiber_manual_record),
-                  label: Text(_isRecording ? "Stop" : "Record"),
-                  onPressed: () {
-                    if (_isRecording) {
-                      _stopVideoRecording();
-                    } else {
-                      _startVideoRecording();
-                    }
-                  },
-                ),
-              ),
+            const Gap(8),
           ],
         ),
       )
