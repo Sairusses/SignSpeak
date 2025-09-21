@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:image/image.dart' as img;
 import 'dart:typed_data' as td;
 
@@ -22,7 +21,7 @@ class SignToTextPage extends StatefulWidget {
 class _SignToTextPageState extends State<SignToTextPage>
     with SingleTickerProviderStateMixin {
   // Modes
-  int selectedMode = 0; // 0 = Real-time, 1 = Runtime
+  int selectedMode = 1; // 0 = Real-time, 1 = Runtime
 
   // Cameras
   CameraController? cameraController;
