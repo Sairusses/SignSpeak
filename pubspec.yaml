@@ -45,6 +45,7 @@ dependencies:
   path: ^1.9.1
   pose: ^1.1.7
   http: ^1.5.0
+  supabase_flutter: ^2.10.1
 
 dev_dependencies:
   flutter_test:
