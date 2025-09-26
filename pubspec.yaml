@@ -46,6 +46,7 @@ dependencies:
   pose: ^1.1.7
   http: ^1.5.0
   supabase_flutter: ^2.10.1
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +68,7 @@ flutter:
   assets:
     - assets/1.tflite
     - assets/hello.pose
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
