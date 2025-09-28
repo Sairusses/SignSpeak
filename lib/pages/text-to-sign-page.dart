@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:pose/pose.dart';
-import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart'; // for compute
 
 class TextToSignPage extends StatefulWidget {
   const TextToSignPage({super.key});
@@ -18,138 +17,43 @@ class _TextToSignPageState extends State<TextToSignPage> {
   final TextEditingController _controller = TextEditingController();
   bool isLoading = false;
   File? gifFile;
-  String? translatedText;
-  final supabase = Supabase.instance.client;
-
-  // ✅ History: text + gif file
-  final List<Map<String, dynamic>> history = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadHistory();
-  }
-
-  /// ✅ Load history from Supabase DB
-  Future<void> _loadHistory() async {
-    try {
-      final response = await supabase
-          .from('sign_gifs')
-          .select()
-          .order('created_at', ascending: false);
-
-      final dir = await getTemporaryDirectory();
-
-      for (var item in response) {
-        final gifUrl = item['gif_url'] as String;
-        final gifResponse = await http.get(Uri.parse(gifUrl));
-
-        if (gifResponse.statusCode == 200) {
-          final localPath =
-              '${dir.path}/hist_${DateTime.now().millisecondsSinceEpoch}.gif';
-          final file = File(localPath);
-          await file.writeAsBytes(gifResponse.bodyBytes);
-
-          history.add({
-            "text": item['text'],
-            "gif": file,
-          });
-        }
-      }
-
-      setState(() {});
-    } catch (e) {
-      debugPrint("Error loading history: $e");
-    }
-  }
 
   Future<void> fetchPoseAndVisualize(String userInput) async {
     try {
       setState(() {
         isLoading = true;
         gifFile = null;
-        translatedText = userInput;
       });
 
-      File? loadedFile;
+      // 1. Fetch .pose file from API
+      final url =
+          "https://us-central1-sign-mt.cloudfunctions.net/spoken_text_to_signed_pose?text=${Uri.encodeComponent(userInput)}&spoken=en&signed=ase";
+      final response = await http.get(Uri.parse(url));
 
-      // 1. Check if this input already exists in Supabase DB
-      final existing = await supabase
-          .from('sign_gifs')
-          .select()
-          .eq('text', userInput)
-          .maybeSingle();
-
-      if (existing != null) {
-        // ✅ Load cached GIF
-        final String gifUrl = existing['gif_url'];
-        final response = await http.get(Uri.parse(gifUrl));
-
-        final dir = await getTemporaryDirectory();
-        final localPath =
-            '${dir.path}/cached_${DateTime.now().millisecondsSinceEpoch}.gif';
-        loadedFile = File(localPath);
-        await loadedFile.writeAsBytes(response.bodyBytes);
-
-        setState(() {
-          gifFile = loadedFile;
-          isLoading = false;
-        });
-      } else {
-        // 2. Otherwise, fetch .pose from API
-        final url =
-            "https://us-central1-sign-mt.cloudfunctions.net/spoken_text_to_signed_pose?text=${Uri.encodeComponent(userInput)}&spoken=en&signed=ase";
-        final response = await http.get(Uri.parse(url));
-        if (response.statusCode != 200) {
-          throw Exception("Failed to fetch pose: ${response.statusCode}");
-        }
-
-        Uint8List fileContent = response.bodyBytes;
-        Pose pose = Pose.read(fileContent);
-
-        // 3. Save GIF locally
-        final dir = await getTemporaryDirectory();
-        final path =
-            '${dir.path}/sign_${DateTime.now().millisecondsSinceEpoch}.gif';
-        loadedFile = await compute(_generateGif, {"pose": pose, "path": path});
-
-        // 4. Upload GIF to Supabase Storage
-        final gifBytes = await loadedFile!.readAsBytes();
-        final fileName = "sign_${DateTime.now().millisecondsSinceEpoch}.gif";
-
-        await supabase.storage.from('gifs').uploadBinary(
-          fileName,
-          gifBytes,
-          fileOptions: const FileOptions(contentType: "image/gif"),
-        );
-
-        final publicUrl =
-        supabase.storage.from('gifs').getPublicUrl(fileName);
-
-        // 5. Insert record into DB
-        await supabase.from('sign_gifs').insert({
-          'text': userInput,
-          'gif_url': publicUrl,
-          'created_at': DateTime.now().toIso8601String(),
-        });
-
-        setState(() {
-          gifFile = loadedFile;
-          isLoading = false;
-        });
+      if (response.statusCode != 200) {
+        throw Exception("Failed to fetch pose: ${response.statusCode}");
       }
+      Uint8List fileContent = response.bodyBytes;
 
-      // ✅ Add to local history (always insert at top)
-      if (loadedFile != null) {
-        setState(() {
-          history.insert(0, {
-            "text": userInput,
-            "gif": loadedFile,
-          });
-        });
-      }
+      // 2. Parse pose
+      Pose pose = Pose.read(fileContent);
+
+      // 3. Run visualization + GIF saving in a background isolate
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}/sign_${DateTime.now().millisecondsSinceEpoch}.gif'; // unique filename
+
+      File savedGif = await compute(_generateGif, {
+        "pose": pose,
+        "path": path,
+      });
+
+      setState(() {
+        gifFile = savedGif;
+        isLoading = false;
+      });
     } catch (e) {
-      debugPrint("Loading Error: $e");
+      debugPrint("Error loading pose: $e");
       setState(() {
         isLoading = false;
       });
@@ -172,79 +76,26 @@ class _TextToSignPageState extends State<TextToSignPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Current translated text + GIF
+            // GIF / Loader section
             Expanded(
               child: Center(
                 child: isLoading
                     ? const CircularProgressIndicator()
                     : (gifFile != null
-                    ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (translatedText != null)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          translatedText!,
-                          style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    Image.file(
-                      gifFile!,
-                      fit: BoxFit.contain,
-                      width: 250,
-                      key: ValueKey(gifFile!.path),
-                    ),
-                  ],
+                    ? Image.file(
+                  gifFile!,
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  key: ValueKey(gifFile!
+                      .path), // force rebuild when file path changes
                 )
                     : const Text("No animation yet")),
               ),
             ),
 
-            // ✅ Translation history
-            if (history.isNotEmpty)
-              SizedBox(
-                height: 160,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: history.length,
-                  itemBuilder: (context, index) {
-                    final item = history[index];
-                    return GestureDetector(
-                      onTap: () {
-                        // ✅ Load clicked history item
-                        setState(() {
-                          translatedText = item["text"];
-                          gifFile = item["gif"];
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.all(8),
-                        child: Column(
-                          children: [
-                            Text(item["text"],
-                                style: const TextStyle(fontSize: 14)),
-                            const SizedBox(height: 4),
-                            Image.file(
-                              item["gif"],
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.contain,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-            // Input area
+            // Input area at bottom
             Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               color: Colors.white,
               child: Row(
                 children: [
@@ -260,17 +111,17 @@ class _TextToSignPageState extends State<TextToSignPage> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide:
-                          const BorderSide(color: Colors.grey),
+                          const BorderSide(color: Colors.grey), // gray
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide:
-                          const BorderSide(color: Colors.grey),
+                          const BorderSide(color: Colors.grey), // gray
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide:
-                          const BorderSide(color: Colors.blue),
+                          const BorderSide(color: Colors.blue), // blue focus
                         ),
                       ),
                     ),

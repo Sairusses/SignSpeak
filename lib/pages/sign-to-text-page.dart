@@ -252,7 +252,7 @@ class _SignToTextPageState extends State<SignToTextPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: Colors.white,
       body: _isInterpreterReady && isCameraInitialized
           ? SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -260,51 +260,47 @@ class _SignToTextPageState extends State<SignToTextPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Mode Switch
-            Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const Text("Translation Mode", textAlign: TextAlign.start, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ChoiceChip(
-                            label: const Text("Real-time\nLive translate",
-                                textAlign: TextAlign.center),
-                            selected: selectedMode == 0,
-                            selectedColor: Colors.blue,
-                            labelStyle: TextStyle(
-                                color: selectedMode == 0
-                                    ? Colors.white
-                                    : Colors.black),
-                            onSelected: (_) {
-                              setState(() => selectedMode = 0);
-                            },
-                          ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Text("Translation Mode", textAlign: TextAlign.start, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Text("Real-time\nLive translate",
+                              textAlign: TextAlign.center),
+                          selected: selectedMode == 0,
+                          selectedColor: Colors.blue,
+                          labelStyle: TextStyle(
+                              color: selectedMode == 0
+                                  ? Colors.white
+                                  : Colors.black),
+                          onSelected: (_) {
+                            setState(() => selectedMode = 0);
+                          },
                         ),
-                        const Gap(12),
-                        Expanded(
-                          child: ChoiceChip(
-                            label: const Text("Runtime\nRecord translate",
-                                textAlign: TextAlign.center),
-                            selected: selectedMode == 1,
-                            selectedColor: Colors.blue,
-                            labelStyle: TextStyle(
-                                color: selectedMode == 1
-                                    ? Colors.white
-                                    : Colors.black),
-                            onSelected: (_) {
-                              setState(() => selectedMode = 1);
-                            },
-                          ),
+                      ),
+                      const Gap(12),
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Text("Runtime\nRecord translate",
+                              textAlign: TextAlign.center),
+                          selected: selectedMode == 1,
+                          selectedColor: Colors.blue,
+                          labelStyle: TextStyle(
+                              color: selectedMode == 1
+                                  ? Colors.white
+                                  : Colors.black),
+                          onSelected: (_) {
+                            setState(() => selectedMode = 1);
+                          },
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const Gap(8),
