@@ -78,17 +78,17 @@ class HomeState extends State<Home> {
         selectedIndex: currentPageIndex,
         destinations: const <Widget>[
           NavigationDestination(
-            selectedIcon: Icon(CupertinoIcons.camera_circle_fill),
+            selectedIcon: Icon(CupertinoIcons.camera_circle_fill, color: Colors.blue,),
             icon: Icon(CupertinoIcons.camera_circle),
             label: 'Home',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.text_format),
+            selectedIcon: Icon(Icons.text_format, color: Colors.blue,),
             icon: Icon(Icons.text_format_outlined),
             label: 'Text to Sign',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.person),
+            selectedIcon: Icon(Icons.person, color: Colors.blue,),
             icon: Icon(Icons.person_outline),
             label: 'Profile',
           ),
