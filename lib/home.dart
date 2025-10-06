@@ -63,13 +63,7 @@ class HomeState extends State<Home> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         scrolledUnderElevation: 0,
-        leading: const Icon(Icons.translate),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: Icon(Icons.settings),
-          ),
-        ],
+        leading: Image.asset('assets/logo.png'),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(0.5),
           child: Divider(height: 0.5, thickness: 0.3),
@@ -94,11 +88,6 @@ class HomeState extends State<Home> {
             label: 'Text to Sign',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.file_upload),
-            icon: Icon(Icons.file_upload_outlined),
-            label: 'Upload',
-          ),
-          NavigationDestination(
             selectedIcon: Icon(Icons.person),
             icon: Icon(Icons.person_outline),
             label: 'Profile',
@@ -112,7 +101,6 @@ class HomeState extends State<Home> {
         children: const [
           SignToTextPage(),
           TextToSignPage(),
-          UploadPage(),
           ProfilePage(),
         ],
       ),
