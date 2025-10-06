@@ -5,7 +5,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:signspeak/pages/profile-page.dart';
 import 'package:signspeak/pages/sign-to-text-page.dart';
 import 'package:signspeak/pages/text-to-sign-page.dart';
-import 'package:signspeak/pages/upload-page.dart';
 
 
 class Home extends StatefulWidget {
