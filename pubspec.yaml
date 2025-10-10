@@ -51,6 +51,7 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   intl: ^0.20.2
   hand_landmarker: ^2.1.0
+  carousel_slider: ^5.1.1
 
 dev_dependencies:
   flutter_test:
