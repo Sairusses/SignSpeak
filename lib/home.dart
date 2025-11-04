@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:signspeak/pages/library-page.dart';
 
-import 'package:signspeak/pages/profile-page.dart';
+import 'package:signspeak/pages/settings-page.dart';
 import 'package:signspeak/pages/sign-to-text-page.dart';
 import 'package:signspeak/pages/text-to-sign-page.dart';
 
@@ -82,14 +83,19 @@ class HomeState extends State<Home> {
             label: 'Home',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.text_format, color: Colors.blue,),
-            icon: Icon(Icons.text_format_outlined),
+            selectedIcon: Icon(Icons.transcribe, color: Colors.blue,),
+            icon: Icon(Icons.transcribe_outlined),
             label: 'Text to Sign',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.person, color: Colors.blue,),
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
+            selectedIcon: Icon(CupertinoIcons.book_fill, color: Colors.blue,),
+            icon: Icon(CupertinoIcons.book),
+            label: 'Text to Sign',
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.settings, color: Colors.blue,),
+            icon: Icon(Icons.settings_outlined),
+            label: 'Settings',
           ),
         ],
       ),
@@ -100,7 +106,8 @@ class HomeState extends State<Home> {
         children: const [
           SignToTextPage(),
           TextToSignPage(),
-          ProfilePage(),
+          LibraryPage(),
+          SettingsPage(title: 'Generate Gifs',),
         ],
       ),
     );
