@@ -52,6 +52,7 @@ dependencies:
   intl: ^0.20.2
   hand_landmarker: ^2.1.0
   carousel_slider: ^5.1.1
+  google_fonts: ^6.3.2
 
 dev_dependencies:
   flutter_test:
