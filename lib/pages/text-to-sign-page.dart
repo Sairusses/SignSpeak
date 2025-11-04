@@ -85,10 +85,9 @@ class _TextToSignPageState extends State<TextToSignPage> {
           gifFile = file;
           isLoading = false;
         });
-        return; // ✅ Found in Supabase
+        return;
       }
 
-      // 3️⃣ Fetch from API if not found anywhere
       final url =
           "https://us-central1-sign-mt.cloudfunctions.net/spoken_text_to_signed_pose?text=${Uri.encodeComponent(userInput)}&spoken=en&signed=ase";
       final response = await http.get(Uri.parse(url));
@@ -101,7 +100,7 @@ class _TextToSignPageState extends State<TextToSignPage> {
       // Parse pose
       Pose pose = Pose.read(fileContent);
 
-      // Generate GIF locally
+      // Generate GIF locallyf
       final dir = await getTemporaryDirectory();
       final path =
           '${dir.path}/sign_${DateTime.now().millisecondsSinceEpoch}.gif';
@@ -242,7 +241,10 @@ class _TextToSignPageState extends State<TextToSignPage> {
             ),
 
             // GIF / Loader section with text below
-            Center(
+            Positioned(
+              top: 100,
+              left: 0,
+              right: 0,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -286,7 +288,6 @@ class _TextToSignPageState extends State<TextToSignPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 color: Colors.white,
                 child: TextField(
-                  focusNode: FocusNode(canRequestFocus: false),
                   autofocus: false,
                   controller: _controller,
                   decoration: InputDecoration(
