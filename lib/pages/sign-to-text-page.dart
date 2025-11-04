@@ -298,220 +298,279 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized ||  !isCameraInitialized) {
-      return const Center(child: CircularProgressIndicator());
+    if (!_isInitialized || !isCameraInitialized) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
     }
-      final controller = cameraController!;
-      final previewSize = controller.value.previewSize!;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Gap(8),
-            // Camera
-            Stack(
-              children: [
-                // Camera Preview
-                Align(
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * .8,
-                    height: MediaQuery.of(context).size.height * .5,
-                    child: AspectRatio(
-                      aspectRatio: cameraController!.value.aspectRatio,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                        child: Stack(
-                          children: [
-                            CameraPreview(cameraController!),
-                            CustomPaint(
-                              size: Size.infinite,
-                              painter: LandmarkPainter(
-                                hands: _landmarks,
-                                previewSize: previewSize,
-                                lensDirection: controller.description.lensDirection,
-                                sensorOrientation: controller.description.sensorOrientation,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // switch camera
-                Positioned(
-                  bottom: 20,
-                  right: 30,
-                  child: AnimatedBuilder(
-                    animation: _rotationAnimation,
-                    builder: (context, child) {
-                      return Transform.rotate(
-                        angle: _rotationAnimation.value * 6.28,
-                        child: IconButton(
-                          onPressed: () async {
-                            await _rotationController.forward(from: 0);
-                            _switchCamera();
-                          },
-                          icon: const Icon(
-                              CupertinoIcons.switch_camera_solid,
-                              color: Colors.white,
-                              size: 35),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // Record Button
-                Positioned(
-                  bottom: 25,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: IconButton.outlined(
-                      icon: Icon(
-                        _isRecording ? Icons.stop : Icons.fiber_manual_record,
-                        color: _isRecording ? Colors.white : Colors.red,
-                        size: 55,
-                      ),
-                      onPressed: () {
-                        if (_isRecording) {
-                          _stopVideoRecording();
-                        } else {
-                          _startVideoRecording();
-                        }
-                      },
-                    ),
-                  ),
-                ),
 
-              ],
+    final controller = cameraController!;
+    final previewSize = controller.value.previewSize!;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ===== FULL SCREEN CAMERA PREVIEW =====
+          FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width, // Example width
+              height: MediaQuery.of(context).size.width * cameraController!.value.aspectRatio, // Maintain camera aspect ratio
+              child: CameraPreview(cameraController!),
             ),
-            const Gap(8),
-            // Text Output
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
+          ),
+
+          // ===== HAND LANDMARK OVERLAY =====
+          FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width, // Example width
+              height: MediaQuery.of(context).size.width * cameraController!.value.aspectRatio, // Maintain camera aspect ratio
+              child: CustomPaint(
+                painter: LandmarkPainter(
+                  hands: _landmarks,
+                  previewSize: previewSize,
+                  lensDirection: controller.description.lensDirection,
+                  sensorOrientation: controller.description.sensorOrientation,
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Translated Text:",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ),
+
+          // ===== TOP TRANSLATED TEXT OVERLAY =====
+          if (_translatedText.isNotEmpty)
+            Positioned(
+              bottom: 150,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _processedText.isEmpty
+                      ? _translatedText
+                      : (_showProcessed ? _processedText : _translatedText),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+
+          // ===== SWITCH CAMERA BUTTON =====
+          Positioned(
+            bottom: 120,
+            right: 25,
+            child: AnimatedBuilder(
+              animation: _rotationAnimation,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _rotationAnimation.value * 6.28,
+                  child: IconButton(
+                    onPressed: () async {
+                      await _rotationController.forward(from: 0);
+                      _switchCamera();
+                    },
+                    icon: const Icon(
+                      CupertinoIcons.switch_camera_solid,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // ===== RECORD BUTTON =====
+          Positioned(
+            bottom: 120,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: GestureDetector(
+                onTap: () {
+                  if (_isRecording) {
+                    _stopVideoRecording();
+                  } else {
+                    _startVideoRecording();
+                  }
+                },
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: _isRecording ? Colors.redAccent : Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
                       ),
-                      if (_processedText.isNotEmpty)
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _showProcessed = !_showProcessed;
-                            });
-                          },
-                          child: Text(
-                            _showProcessed ? "Show Raw" : "Show Corrected",
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.blueAccent,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _processedText.isEmpty
-                        ? (_translatedText.isEmpty
-                        ? "No text yet..."
-                        : _translatedText)
-                        : (_showProcessed ? _processedText : _translatedText),
-                    style: const TextStyle(fontSize: 14),
+                  child: Icon(
+                    _isRecording ? Icons.stop : Icons.fiber_manual_record,
+                    color: _isRecording ? Colors.white : Colors.red,
+                    size: 50,
                   ),
-                ],
-              ),
-            ),
-            // Pictures carousel
-            if (pictures.isNotEmpty && !_isRecording) ...[
-              const SizedBox(height: 16),
-              const Text(
-                "Captured Signs",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              CarouselSlider.builder(
-                itemCount: pictures.length,
-                itemBuilder: (context, index, realIdx) {
-                  final img = pictures[index];
-                  final letter = predicted_letters[index];
-                  final conf = confidences[index];
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.file(
-                              File(img.path),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Prediction: $letter",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          "Confidence: ${(conf * 1000).toStringAsFixed(1)}%",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                    ),
-                  );
-                },
-                options: CarouselOptions(
-                  height: 300,
-                  enlargeCenterPage: true,
-                  enableInfiniteScroll: false,
-                  viewportFraction: 0.8,
-                  autoPlay: false,
                 ),
               ),
-            ],
-          ],
-        ),
-      )
+            ),
+          ),
+
+          // ===== BOTTOM SLIDER (AFTER RECORDING) =====
+          if (!_isRecording && pictures.isNotEmpty)
+            DraggableScrollableSheet(
+              initialChildSize: 0.25,
+              minChildSize: 0.2,
+              maxChildSize: 0.85,
+              builder: (context, scrollController) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  child: ListView(
+                    controller: scrollController,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 60,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[400],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Processed Text",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          if (_processedText.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _showProcessed = !_showProcessed;
+                                });
+                              },
+                              child: Text(
+                                _showProcessed ? "Show Raw" : "Show Corrected",
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.blueAccent,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _processedText.isEmpty
+                            ? (_translatedText.isEmpty
+                            ? "No text yet..."
+                            : _translatedText)
+                            : (_showProcessed
+                            ? _processedText
+                            : _translatedText),
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        "Captured Signs",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      CarouselSlider.builder(
+                        itemCount: pictures.length,
+                        itemBuilder: (context, index, realIdx) {
+                          final img = pictures[index];
+                          final letter = predicted_letters[index];
+                          final conf = confidences[index];
+
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Image.file(
+                                      File(img.path),
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Prediction: $letter",
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  "Confidence: ${(conf * 100).toStringAsFixed(1)}%",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          );
+                        },
+                        options: CarouselOptions(
+                          height: 300,
+                          enlargeCenterPage: true,
+                          enableInfiniteScroll: false,
+                          viewportFraction: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 }
