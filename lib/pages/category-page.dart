@@ -148,6 +148,18 @@ class _CategoryPageState extends State<CategoryPage> {
                   borderRadius: BorderRadius.circular(20),
                   child: Image.network(
                     gifUrl,
+                    loadingBuilder: (BuildContext context, Widget child,
+                        ImageChunkEvent? loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) => Container(
                       height: 200,
