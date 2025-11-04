@@ -4,14 +4,12 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:gap/gap.dart';
 import 'package:hand_landmarker/hand_landmarker.dart';
 import 'package:signspeak/services/landmark_painter.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SignToTextPage extends StatefulWidget {
   const SignToTextPage({super.key});
@@ -45,6 +43,8 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
   List<String> predicted_letters = [];
   List<double> confidences = [];
   String _translatedText = '';
+  String _processedText = '';
+  bool _showProcessed = true;
 
   @override
   void initState() {
@@ -62,17 +62,15 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
     _rotationController.dispose();
     super.dispose();
   }
-
+  // Initializations
   Future<void> _initializeSystem() async {
     await initializeCamera(_selectedCameraIndex);
     await initializeHandLandmark();
   }
-
   Future<void> requestPermissions() async {
     await Permission.camera.request();
     await Permission.microphone.request();
   }
-
   Future<void> initializeCamera(int cameraIndex) async {
     // Dispose the old camera controller before creating a new one
     if (cameraController != null) {
@@ -102,34 +100,39 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       }
     }
   }
-
+  // Camera Functions
   Future<void> _switchCamera() async {
     if (cameras == null || cameras!.length < 2) return;
     final newIndex = (_selectedCameraIndex == 0) ? 1 : 0;
     await initializeCamera(newIndex);
     await initializeHandLandmark();
   }
-
   Future<void> _startVideoRecording() async {
     if (_isRecording) return;
+
+    setState(() {
+      pictures.clear();
+      predicted_letters.clear();
+      confidences.clear();
+      _translatedText = '';
+      _processedText = '';
+    });
 
     setState(() {
       _isRecording = true;
     });
 
-    debugPrint("Recording started — frames will be processed for sign detection.");
   }
-
   Future<void> _stopVideoRecording() async {
     if (!_isRecording) return;
 
     setState(() {
       _isRecording = false;
     });
-
+    _processedText = await processText(_translatedText) ?? '';
     debugPrint("Recording stopped — frame processing paused.");
   }
-
+  // Sign Translations
   Future<void> initializeHandLandmark() async {
     _plugin = HandLandmarkerPlugin.create(
       numHands: 1, // The maximum number of hands to detect.
@@ -141,7 +144,6 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       setState(() => _isInitialized = true);
     }
   }
-
   Future<void> _processCameraImage(CameraImage image) async {
     // If detection is already in progress, skip this frame.
     if (_isDetecting || !_isInitialized || _plugin == null) return;
@@ -171,6 +173,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
 
             // Send to API
             final result = await _predictSignLanguage(File(imageFile.path));
+            debugPrint(result.toString());
 
             if (result != null) {
               final predictedLetter = result['predicted_letter'];
@@ -178,12 +181,14 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
               debugPrint("Detected: $predictedLetter ($confidence)");
 
               // Append to translated text
-              setState(() {
-                pictures.add(imageFile);
-                predicted_letters.add(predictedLetter);
-                confidences.add(confidence);
-                _translatedText += predictedLetter;
-              });
+              if(confidence > 0.07){
+                setState(() {
+                  pictures.add(imageFile);
+                  predicted_letters.add(predictedLetter);
+                  confidences.add(confidence);
+                  _translatedText += predictedLetter;
+                });
+              }
             }
           } catch (e) {
             debugPrint("Error capturing or sending frame: $e");
@@ -199,7 +204,61 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       _isDetecting = false;
     }
   }
+  Future<String?> processText(String text) async {
+    final apiKey = dotenv.env['GROQ'];
+    if (apiKey == null || apiKey.isEmpty) {
+      debugPrint("GROQ API key not found in .env");
+      return null;
+    }
 
+    final uri = Uri.parse("https://api.groq.com/openai/v1/chat/completions");
+
+    final body = jsonEncode({
+      "messages": [
+        {
+          "role": "system",
+          "content":
+          "You are an AI text corrector. Return only the normalized and autocorrected version of the provided text without adding explanations or extra punctuation."
+        },
+        {
+          "role": "user",
+          "content": text
+        }
+      ],
+      "model": "openai/gpt-oss-120b",
+      "temperature": 1,
+      "max_completion_tokens": 8192,
+      "top_p": 1,
+      "stream": false,
+      "reasoning_effort": "high",
+      "stop": null,
+      "tools": []
+    });
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $apiKey",
+        },
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final correctedText =
+        data["choices"]?[0]?["message"]?["content"]?.trim();
+        debugPrint("Corrected text: $correctedText");
+        return correctedText;
+      } else {
+        debugPrint("Text process failed: ${response.statusCode} - ${response.body}");
+      }
+    } catch (e) {
+      debugPrint("⚠Error during text process: $e");
+    }
+    return null;
+  }
   bool _hasSignificantChange(Hand prev, Hand curr, {double threshold = 0.15}) {
     // both hands must have same number of landmarks (21)
     if (prev.landmarks.length != curr.landmarks.length) return true;
@@ -217,7 +276,6 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
 
     return false;
   }
-
   Future<Map<String, dynamic>?> _predictSignLanguage(File imageFile) async {
     try {
       final uri = Uri.parse("https://sairusses-alphabet-sign-api.hf.space/predict");
@@ -245,7 +303,6 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
     }
       final controller = cameraController!;
       final previewSize = controller.value.previewSize!;
-      final previewAspectRatio = previewSize.height / previewSize.width;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
@@ -254,6 +311,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Gap(8),
+            // Camera
             Stack(
               children: [
                 // Camera Preview
@@ -333,6 +391,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
               ],
             ),
             const Gap(8),
+            // Text Output
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -343,18 +402,44 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Translated Text:",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Translated Text:",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      if (_processedText.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _showProcessed = !_showProcessed;
+                            });
+                          },
+                          child: Text(
+                            _showProcessed ? "Show Raw" : "Show Corrected",
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.blueAccent,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _translatedText.isEmpty ? "No text yet..." : _translatedText,
+                    _processedText.isEmpty
+                        ? (_translatedText.isEmpty
+                        ? "No text yet..."
+                        : _translatedText)
+                        : (_showProcessed ? _processedText : _translatedText),
                     style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),
             ),
+            // Pictures carousel
             if (pictures.isNotEmpty && !_isRecording) ...[
               const SizedBox(height: 16),
               const Text(
@@ -404,7 +489,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                           ),
                         ),
                         Text(
-                          "Confidence: ${(conf * 100).toStringAsFixed(1)}%",
+                          "Confidence: ${(conf * 1000).toStringAsFixed(1)}%",
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
@@ -424,7 +509,6 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                 ),
               ),
             ],
-
           ],
         ),
       )
