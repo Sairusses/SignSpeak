@@ -21,13 +21,18 @@ class LandmarkPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final scale = size.width / previewSize.height;
 
+    final border = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 1 / scale
+      ..style = PaintingStyle.stroke;
+
     final paint = Paint()
-      ..color = Colors.red
-      ..strokeWidth = 8 / scale
+      ..color = const Color(0xFFB9D9EB)
+      ..strokeWidth = 4 / scale
       ..strokeCap = StrokeCap.round;
 
     final linePaint = Paint()
-      ..color = Colors.lightBlueAccent
+      ..color = const Color(0xFFB9D9EB)
       ..strokeWidth = 2 / scale;
 
     canvas.save();
@@ -48,12 +53,6 @@ class LandmarkPainter extends CustomPainter {
     final logicalHeight = previewSize.height;
 
     for (final hand in hands) {
-      for (final landmark in hand.landmarks) {
-        // Now dx is scaled by width, and dy is scaled by height.
-        final dx = (landmark.x - 0.5) * logicalWidth;
-        final dy = (landmark.y - 0.5) * logicalHeight;
-        canvas.drawCircle(Offset(dx, dy), 4 / scale, paint);
-      }
       for (final connection in HandLandmarkConnections.connections) {
         final start = hand.landmarks[connection[0]];
         final end = hand.landmarks[connection[1]];
@@ -66,6 +65,13 @@ class LandmarkPainter extends CustomPainter {
           Offset(endDx, endDy),
           linePaint,
         );
+      }
+      for (final landmark in hand.landmarks) {
+        // Now dx is scaled by width, and dy is scaled by height.
+        final dx = (landmark.x - 0.5) * logicalWidth;
+        final dy = (landmark.y - 0.5) * logicalHeight;
+        canvas.drawCircle(Offset(dx, dy), 3 / scale, paint);
+        canvas.drawCircle(Offset(dx, dy), 3 / scale, border);
       }
     }
 
