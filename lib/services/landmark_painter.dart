@@ -28,7 +28,7 @@ class LandmarkPainter extends CustomPainter {
 
     final paint = Paint()
       ..color = const Color(0xFFB9D9EB)
-      ..strokeWidth = 4 / scale
+      ..strokeWidth = 2 / scale
       ..strokeCap = StrokeCap.round;
 
     final linePaint = Paint()
@@ -70,8 +70,8 @@ class LandmarkPainter extends CustomPainter {
         // Now dx is scaled by width, and dy is scaled by height.
         final dx = (landmark.x - 0.5) * logicalWidth;
         final dy = (landmark.y - 0.5) * logicalHeight;
-        canvas.drawCircle(Offset(dx, dy), 3 / scale, paint);
-        canvas.drawCircle(Offset(dx, dy), 3 / scale, border);
+        canvas.drawCircle(Offset(dx, dy), 2 / scale, paint);
+        canvas.drawCircle(Offset(dx, dy), 2 / scale, border);
       }
     }
 
