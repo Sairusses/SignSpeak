@@ -7,9 +7,17 @@ import 'package:signspeak/pages/library-page.dart';
 import 'package:signspeak/pages/settings-page.dart';
 import 'package:signspeak/pages/sign-to-text-page.dart';
 import 'package:signspeak/pages/text-to-sign-page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Home extends StatefulWidget {
-  const Home({super.key});
+  final Function(bool) onThemeChanged;
+  final ThemeMode themeMode;
+
+  const Home({
+    super.key,
+    required this.onThemeChanged,
+    required this.themeMode,
+  });
 
   @override
   State<Home> createState() => HomeState();
@@ -18,18 +26,34 @@ class Home extends StatefulWidget {
 class HomeState extends State<Home> {
   int currentPageIndex = 0;
   late PageController _pageController;
+  double _threshold = 0.05;
 
   @override
   void initState() {
     super.initState();
     requestPermissions();
     _pageController = PageController(initialPage: currentPageIndex);
+    _loadThreshold();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadThreshold() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _threshold = prefs.getDouble('threshold') ?? 0.05;
+    });
+  }
+  Future<void> updateThreshold(double newThreshold) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('threshold', newThreshold);
+    setState(() {
+      _threshold = newThreshold;
+    });
   }
 
   Future<void> requestPermissions() async {
@@ -52,8 +76,6 @@ class HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    final Color selectedColor = Colors.blueAccent;
-    final Color unselectedColor = Colors.grey.shade500;
 
     return Scaffold(
       extendBody: true,
@@ -83,11 +105,16 @@ class HomeState extends State<Home> {
         controller: _pageController,
         physics: const BouncingScrollPhysics(),
         onPageChanged: onPageChanged,
-        children: const [
-          SignToTextPage(),
-          TextToSignPage(),
-          LibraryPage(),
-          SettingsPage(title: 'Generate GIFs'),
+        children: [
+          SignToTextPage(threshold: _threshold),
+          const TextToSignPage(),
+          const LibraryPage(),
+          SettingsPage(
+            initialThreshold: _threshold,
+            onThresholdChanged: updateThreshold,
+            isDarkMode: widget.themeMode == ThemeMode.dark,
+            onThemeChanged: widget.onThemeChanged,
+          ),
         ],
       ),
 
@@ -97,78 +124,105 @@ class HomeState extends State<Home> {
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.4),
-                  width: 1.0,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blueAccent.withOpacity(0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+            child: Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+
+                final bgColor = isDark
+                    ? Colors.black.withOpacity(0.25)
+                    : Colors.white.withOpacity(0.7);
+
+                final borderColor = isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.white.withOpacity(0.4);
+
+                final shadowColor = isDark
+                    ? Colors.blueAccent.withOpacity(0.05)
+                    : Colors.blueAccent.withOpacity(0.15);
+
+                final selectedColor = isDark ? Colors.blueAccent : Colors.blueAccent;
+                final unselectedColor = isDark
+                    ? Colors.white.withOpacity(0.6)
+                    : Colors.black.withOpacity(0.6);
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    border: Border.all(
+                      color: borderColor,
+                      width: 1.0,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: shadowColor,
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: NavigationBarTheme(
-                data: NavigationBarThemeData(
-                  backgroundColor: Colors.transparent,
-                  indicatorColor: Colors.blueAccent.withOpacity(0.15),
-                  labelTextStyle: MaterialStateProperty.all(
-                    GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                  child: NavigationBarTheme(
+                    data: NavigationBarThemeData(
+                      backgroundColor: Colors.transparent,
+                      indicatorColor: isDark
+                          ? Colors.white.withOpacity(0.08)
+                          : Colors.blueAccent.withOpacity(0.15),
+                      labelTextStyle: MaterialStateProperty.all(
+                        GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                    child: NavigationBar(
+                      height: 70,
+                      elevation: 0,
+                      selectedIndex: currentPageIndex,
+                      onDestinationSelected: onDestinationSelected,
+                      destinations: [
+                        _buildDestination(
+                          icon: CupertinoIcons.camera_circle,
+                          selectedIcon: CupertinoIcons.camera_circle_fill,
+                          label: 'Sign to Text',
+                          selectedColor: selectedColor,
+                          unselectedColor: unselectedColor,
+                          isSelected: currentPageIndex == 0,
+                        ),
+                        _buildDestination(
+                          icon: Icons.transcribe_outlined,
+                          selectedIcon: Icons.transcribe,
+                          label: 'Text to Sign',
+                          selectedColor: selectedColor,
+                          unselectedColor: unselectedColor,
+                          isSelected: currentPageIndex == 1,
+                        ),
+                        _buildDestination(
+                          icon: CupertinoIcons.book,
+                          selectedIcon: CupertinoIcons.book_fill,
+                          label: 'Library',
+                          selectedColor: selectedColor,
+                          unselectedColor: unselectedColor,
+                          isSelected: currentPageIndex == 2,
+                        ),
+                        _buildDestination(
+                          icon: Icons.settings_outlined,
+                          selectedIcon: Icons.settings,
+                          label: 'Settings',
+                          selectedColor: selectedColor,
+                          unselectedColor: unselectedColor,
+                          isSelected: currentPageIndex == 3,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                child: NavigationBar(
-                  height: 70,
-                  elevation: 0,
-                  selectedIndex: currentPageIndex,
-                  onDestinationSelected: onDestinationSelected,
-                  destinations: [
-                    _buildDestination(
-                      icon: CupertinoIcons.camera_circle,
-                      selectedIcon: CupertinoIcons.camera_circle_fill,
-                      label: 'Sign to Text',
-                      selectedColor: selectedColor,
-                      unselectedColor: unselectedColor,
-                      isSelected: currentPageIndex == 0,
-                    ),
-                    _buildDestination(
-                      icon: Icons.transcribe_outlined,
-                      selectedIcon: Icons.transcribe,
-                      label: 'Text to Sign',
-                      selectedColor: selectedColor,
-                      unselectedColor: unselectedColor,
-                      isSelected: currentPageIndex == 1,
-                    ),
-                    _buildDestination(
-                      icon: CupertinoIcons.book,
-                      selectedIcon: CupertinoIcons.book_fill,
-                      label: 'Library',
-                      selectedColor: selectedColor,
-                      unselectedColor: unselectedColor,
-                      isSelected: currentPageIndex == 2,
-                    ),
-                    _buildDestination(
-                      icon: Icons.settings_outlined,
-                      selectedIcon: Icons.settings,
-                      label: 'Settings',
-                      selectedColor: selectedColor,
-                      unselectedColor: unselectedColor,
-                      isSelected: currentPageIndex == 3,
-                    ),
-                  ],
-                ),
-              ),
+                );
+              },
             ),
           ),
         ),
       ),
+
     );
   }
 

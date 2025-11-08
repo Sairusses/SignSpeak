@@ -27,8 +27,11 @@ class _LibraryPageState extends State<LibraryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? const Color(0xFF0F1115) : const Color(0xfff6f8fb);
+
     return Scaffold(
-      backgroundColor: const Color(0xfff6f8fb),
+      backgroundColor: backgroundColor,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: GridView.builder(
@@ -41,14 +44,22 @@ class _LibraryPageState extends State<LibraryPage> {
           ),
           itemBuilder: (context, index) {
             final category = categories[index];
-            return _buildCategoryCard(category);
+            return _buildCategoryCard(category, isDark);
           },
         ),
       ),
     );
   }
 
-  Widget _buildCategoryCard(Map<String, dynamic> category) {
+  Widget _buildCategoryCard(Map<String, dynamic> category, bool isDark) {
+    final gradientColors = isDark
+        ? [const Color(0xFF1E3A8A), const Color(0xFF2563EB)] // darker blue tones
+        : [Colors.indigoAccent.shade100, Colors.blueAccent.shade200];
+
+    final shadowColor = isDark
+        ? Colors.black.withOpacity(0.4)
+        : Colors.blueAccent.withOpacity(0.25);
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -63,17 +74,14 @@ class _LibraryPageState extends State<LibraryPage> {
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Colors.indigoAccent.shade100,
-              Colors.blueAccent.shade200,
-            ],
+            colors: gradientColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.blueAccent.withOpacity(0.25),
+              color: shadowColor,
               blurRadius: 10,
               offset: const Offset(0, 6),
             ),

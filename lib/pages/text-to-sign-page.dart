@@ -147,16 +147,22 @@ class _TextToSignPageState extends State<TextToSignPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xfff6f8fb),
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 24),
+
+            // Header
             Text(
               "Text to Sign",
               style: GoogleFonts.poppins(
-                color: Colors.black87,
+                color: colorScheme.onBackground,
                 fontWeight: FontWeight.bold,
                 fontSize: 24,
                 letterSpacing: 0.8,
@@ -166,7 +172,7 @@ class _TextToSignPageState extends State<TextToSignPage> {
             Text(
               "Type text and view its sign language translation",
               style: GoogleFonts.poppins(
-                color: Colors.grey,
+                color: isDark ? Colors.grey[400] : Colors.grey[700],
                 fontSize: 14,
                 letterSpacing: 0.8,
               ),
@@ -196,15 +202,20 @@ class _TextToSignPageState extends State<TextToSignPage> {
                   )
                       : Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       Icon(Icons.sign_language,
-                          size: 80, color: Colors.grey),
-                      SizedBox(height: 10),
+                          size: 80,
+                          color:
+                          isDark ? Colors.grey[600] : Colors.grey),
+                      const SizedBox(height: 10),
                       Text(
                         "No animation yet",
                         style: TextStyle(
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500),
+                          color: isDark
+                              ? Colors.grey[500]
+                              : Colors.grey[700],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -212,13 +223,14 @@ class _TextToSignPageState extends State<TextToSignPage> {
               ),
             ),
 
+            // Last Translated Text
             if (_lastTranslatedText.isNotEmpty && !isLoading)
               Padding(
                 padding: const EdgeInsets.only(bottom: 24),
                 child: Text(
                   _lastTranslatedText,
                   style: GoogleFonts.poppins(
-                    color: Colors.black54,
+                    color: colorScheme.onBackground.withOpacity(0.8),
                     fontWeight: FontWeight.w600,
                     fontSize: 24,
                     letterSpacing: 0.8,
@@ -231,41 +243,52 @@ class _TextToSignPageState extends State<TextToSignPage> {
               height: 70,
               margin: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: isDark
+                    ? Colors.grey[900]?.withOpacity(0.7)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(40),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
+                  if (!isDark)
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
                 ],
               ),
               child: Row(
                 children: [
                   const SizedBox(width: 12),
                   IconButton(
-                    icon: const Icon(Icons.history, color: Colors.blue),
+                    icon: Icon(Icons.history,
+                        color: colorScheme.primary),
                     onPressed: () => _showHistoryDialog(),
                   ),
                   Expanded(
                     child: TextField(
                       controller: _controller,
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: colorScheme.onSurface),
+                      decoration: InputDecoration(
                         hintText: "Type a message...",
+                        hintStyle: TextStyle(
+                          color: isDark
+                              ? Colors.grey[500]
+                              : Colors.grey[600],
+                        ),
                         border: InputBorder.none,
                       ),
                       onSubmitted: (text) => _handleSend(),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.mic, color: Colors.blue),
+                    icon: Icon(Icons.mic, color: colorScheme.primary),
                     onPressed: () {
                       // TODO: integrate speech-to-text
                     },
                   ),
                   IconButton(
-                    icon: const Icon(Icons.send_rounded, color: Colors.blue),
+                    icon: Icon(Icons.send_rounded,
+                        color: colorScheme.primary),
                     onPressed: _handleSend,
                   ),
                   const SizedBox(width: 6),
@@ -278,6 +301,7 @@ class _TextToSignPageState extends State<TextToSignPage> {
     );
   }
 
+
   void _handleSend() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
@@ -287,50 +311,136 @@ class _TextToSignPageState extends State<TextToSignPage> {
   }
 
   void _showHistoryDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF121212) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.grey.shade400 : Colors.grey;
+    final tileColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final shadowColor = isDark ? Colors.black.withOpacity(0.4) : Colors.grey.withOpacity(0.15);
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => ListView.builder(
-        padding: const EdgeInsets.all(12),
-        itemCount: history.length,
-        itemBuilder: (context, index) {
-          final item = history[index];
-          return Card(
-            elevation: 2,
-            margin: const EdgeInsets.symmetric(vertical: 6),
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: ListTile(
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(item.gifPath),
-                  width: 55,
-                  height: 55,
-                  fit: BoxFit.cover,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, scrollController) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Translation History",
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: subTextColor),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // History List
+              Expanded(
+                child: history.isEmpty
+                    ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.history, size: 60, color: subTextColor),
+                      const SizedBox(height: 8),
+                      Text(
+                        "No translation history yet",
+                        style: GoogleFonts.poppins(
+                          color: subTextColor,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                    : ListView.builder(
+                  controller: scrollController,
+                  itemCount: history.length,
+                  itemBuilder: (context, index) {
+                    final item = history[index];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          gifFile = File(item.gifPath);
+                          _lastTranslatedText = item.text;
+                        });
+                        Navigator.pop(context);
+                        FocusScope.of(context).unfocus();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        decoration: BoxDecoration(
+                          color: tileColor,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: shadowColor,
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.file(
+                              File(item.gifPath),
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          title: Text(
+                            item.text,
+                            style: GoogleFonts.poppins(
+                              color: textColor,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                            ),
+                          ),
+                          subtitle: Text(
+                            DateFormat('MMM d, yyyy • hh:mm a')
+                                .format(DateTime.parse(item.timestamp)),
+                            style: GoogleFonts.poppins(
+                              color: subTextColor,
+                              fontSize: 13,
+                            ),
+                          ),
+                          trailing: Icon(Icons.arrow_forward_ios,
+                              size: 16, color: subTextColor),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-              title: Text(item.text),
-              subtitle: Text(
-                DateFormat('MMM d, yyyy • hh:mm a')
-                    .format(DateTime.parse(item.timestamp)),
-                style: const TextStyle(color: Colors.grey),
-              ),
-              onTap: () {
-                setState(() {
-                  gifFile = File(item.gifPath);
-                  _lastTranslatedText = item.text;
-                });
-                Navigator.pop(context);
-                FocusScope.of(context).unfocus();
-              },
-            ),
-          );
-        },
+            ],
+          ),
+        ),
       ),
     );
   }

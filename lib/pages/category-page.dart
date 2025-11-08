@@ -42,18 +42,24 @@ class _CategoryPageState extends State<CategoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0F1115) : const Color(0xfff6f8fb);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
+
     final formattedCategory = widget.category.replaceAll('_', ' ').toUpperCase();
 
     return Scaffold(
-      backgroundColor: const Color(0xfff6f8fb),
+      backgroundColor: bgColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        foregroundColor: Colors.black87,
+        foregroundColor: textColor,
         title: Text(
           formattedCategory,
           style: GoogleFonts.poppins(
+            color: textColor,
             fontWeight: FontWeight.w600,
             fontSize: 20,
             letterSpacing: 1,
@@ -70,7 +76,7 @@ class _CategoryPageState extends State<CategoryPage> {
           "No GIFs found for this category.",
           style: GoogleFonts.poppins(
             fontSize: 16,
-            color: Colors.grey.shade700,
+            color: subtitleColor,
           ),
         ),
       )
@@ -81,30 +87,36 @@ class _CategoryPageState extends State<CategoryPage> {
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final gif = gifs[index];
-          return _buildGifListTile(gif);
+          return _buildGifListTile(gif, isDark);
         },
       ),
     );
   }
 
-  Widget _buildGifListTile(Map<String, dynamic> gif) {
+  Widget _buildGifListTile(Map<String, dynamic> gif, bool isDark) {
+    final gradientColors = isDark
+        ? [const Color(0xFF1E3A8A), const Color(0xFF2563EB)]
+        : [Colors.indigoAccent.shade100, Colors.blueAccent.shade200];
+
+    final shadowColor =
+    isDark ? Colors.black.withOpacity(0.4) : Colors.blueAccent.withOpacity(0.2);
+
     return InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: () => _showGifDialog(gif['text'], gif['gif_url']),
-      child: Container(
+      onTap: () => _showGifDialog(gif['text'], gif['gif_url'], isDark),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Colors.indigoAccent.shade100,
-              Colors.blueAccent.shade200,
-            ],
+            colors: gradientColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.blueAccent.withOpacity(0.2),
+              color: shadowColor,
               blurRadius: 10,
               offset: const Offset(0, 6),
             ),
@@ -131,10 +143,10 @@ class _CategoryPageState extends State<CategoryPage> {
     );
   }
 
-  void _showGifDialog(String? title, String gifUrl) {
+  void _showGifDialog(String? title, String gifUrl, bool isDark) {
     showDialog(
       context: context,
-      barrierColor: Colors.black,
+      barrierColor: Colors.black.withOpacity(0.85),
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -153,6 +165,7 @@ class _CategoryPageState extends State<CategoryPage> {
                       if (loadingProgress == null) return child;
                       return Center(
                         child: CircularProgressIndicator(
+                          color: Colors.white,
                           value: loadingProgress.expectedTotalBytes != null
                               ? loadingProgress.cumulativeBytesLoaded /
                               loadingProgress.expectedTotalBytes!
@@ -164,7 +177,9 @@ class _CategoryPageState extends State<CategoryPage> {
                     errorBuilder: (context, error, stackTrace) => Container(
                       height: 200,
                       width: 200,
-                      color: Colors.grey.shade300,
+                      color: isDark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade300,
                       child: const Icon(Icons.broken_image, size: 60),
                     ),
                   ),
@@ -184,13 +199,14 @@ class _CategoryPageState extends State<CategoryPage> {
               ElevatedButton.icon(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.9),
+                  backgroundColor:
+                  isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9),
                   foregroundColor: Colors.blueAccent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12),
                 ),
                 icon: const Icon(Icons.close),
                 label: Text(

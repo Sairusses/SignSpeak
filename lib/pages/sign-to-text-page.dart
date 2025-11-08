@@ -12,7 +12,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SignToTextPage extends StatefulWidget {
-  const SignToTextPage({super.key});
+  final double threshold;
+  const SignToTextPage({super.key, required this.threshold});
 
   @override
   State<SignToTextPage> createState() => _SignToTextPageState();
@@ -135,7 +136,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
   // Sign Translations
   Future<void> initializeHandLandmark() async {
     _plugin = HandLandmarkerPlugin.create(
-      numHands: 1, // The maximum number of hands to detect.
+      numHands: 2, // The maximum number of hands to detect.
       minHandDetectionConfidence: 0.7, // The minimum confidence score for detection.
       delegate: HandLandmarkerDelegate.GPU, // The processing delegate (GPU or CPU).
     );
@@ -181,7 +182,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
               debugPrint("Detected: $predictedLetter ($confidence)");
 
               // Append to translated text
-              if(confidence > 0.07){
+              if(confidence > 0.7){
                 setState(() {
                   pictures.add(imageFile);
                   predicted_letters.add(predictedLetter);
@@ -259,8 +260,8 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
     }
     return null;
   }
-  bool _hasSignificantChange(Hand prev, Hand curr, {double threshold = 0.15}) {
-    // both hands must have same number of landmarks (21)
+  bool _hasSignificantChange(Hand prev, Hand curr) {
+    final threshold = widget.threshold;
     if (prev.landmarks.length != curr.landmarks.length) return true;
 
     for (int i = 0; i < prev.landmarks.length; i++) {
@@ -298,10 +299,28 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final backgroundColor = isDark ? Colors.black : const Color(0xfff6f8fb);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final sheetColor = isDark
+        ? Colors.grey[900]!.withOpacity(0.95)
+        : Colors.white.withOpacity(0.95);
+    final glassColor = isDark
+        ? Colors.black.withOpacity(0.4)
+        : Colors.white.withOpacity(0.7);
+    final borderColor = isDark
+        ? Colors.white.withOpacity(0.2)
+        : Colors.white.withOpacity(0.4);
+
     if (!_isInitialized || !isCameraInitialized) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: isDark ? Colors.white : Colors.blueAccent,
+          ),
+        ),
       );
     }
 
@@ -309,16 +328,17 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
     final previewSize = controller.value.previewSize!;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: backgroundColor,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ===== FULL SCREEN CAMERA PREVIEW =====
+          // ===== CAMERA PREVIEW =====
           FittedBox(
             fit: BoxFit.cover,
             child: SizedBox(
-              width: MediaQuery.of(context).size.width, // Example width
-              height: MediaQuery.of(context).size.width * cameraController!.value.aspectRatio, // Maintain camera aspect ratio
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.width *
+                  cameraController!.value.aspectRatio,
               child: CameraPreview(cameraController!),
             ),
           ),
@@ -327,8 +347,9 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
           FittedBox(
             fit: BoxFit.cover,
             child: SizedBox(
-              width: MediaQuery.of(context).size.width, // Example width
-              height: MediaQuery.of(context).size.width * cameraController!.value.aspectRatio, // Maintain camera aspect ratio
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.width *
+                  cameraController!.value.aspectRatio,
               child: CustomPaint(
                 painter: LandmarkPainter(
                   hands: _landmarks,
@@ -340,17 +361,18 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
             ),
           ),
 
-          // ===== TOP TRANSLATED TEXT OVERLAY =====
+          // ===== TRANSLATED TEXT OVERLAY =====
           if (_translatedText.isNotEmpty)
             Positioned(
-              bottom: 150,
+              bottom: 220,
               left: 0,
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: glassColor,
+                  border: Border.all(color: borderColor, width: 1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -358,8 +380,8 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                       ? _translatedText
                       : (_showProcessed ? _processedText : _translatedText),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: textColor,
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
                   ),
@@ -369,7 +391,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
 
           // ===== SWITCH CAMERA BUTTON =====
           Positioned(
-            bottom: 120,
+            bottom: 140,
             right: 25,
             child: AnimatedBuilder(
               animation: _rotationAnimation,
@@ -381,7 +403,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                       await _rotationController.forward(from: 0);
                       _switchCamera();
                     },
-                    icon: const Icon(
+                    icon: Icon(
                       CupertinoIcons.switch_camera_solid,
                       color: Colors.white,
                       size: 32,
@@ -394,7 +416,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
 
           // ===== RECORD BUTTON =====
           Positioned(
-            bottom: 120,
+            bottom: 140,
             left: 0,
             right: 0,
             child: Center(
@@ -410,11 +432,19 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: _isRecording ? Colors.redAccent : Colors.white,
+                    color: _isRecording
+                        ? Colors.redAccent
+                        : (isDark ? Colors.white10 : Colors.white),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? Colors.white54 : Colors.black12,
+                      width: 1.5,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black26,
+                        color: isDark
+                            ? Colors.black45
+                            : Colors.black26,
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -430,7 +460,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
             ),
           ),
 
-          // ===== BOTTOM SLIDER (AFTER RECORDING) =====
+          // ===== DRAGGABLE SLIDER =====
           if (!_isRecording && pictures.isNotEmpty)
             DraggableScrollableSheet(
               initialChildSize: 0.25,
@@ -439,9 +469,14 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
               builder: (context, scrollController) {
                 return Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  decoration: BoxDecoration(
+                    color: sheetColor,
+                    borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+                    border: Border.all(
+                      color: borderColor,
+                      width: 1,
+                    ),
                   ),
                   child: ListView(
                     controller: scrollController,
@@ -451,7 +486,9 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                           width: 60,
                           height: 5,
                           decoration: BoxDecoration(
-                            color: Colors.grey[400],
+                            color: isDark
+                                ? Colors.white24
+                                : Colors.grey[400],
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
@@ -460,11 +497,12 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             "Processed Text",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
+                              color: textColor,
                             ),
                           ),
                           if (_processedText.isNotEmpty)
@@ -475,7 +513,9 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                                 });
                               },
                               child: Text(
-                                _showProcessed ? "Show Raw" : "Show Corrected",
+                                _showProcessed
+                                    ? "Show Raw"
+                                    : "Show Corrected",
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: Colors.blueAccent,
@@ -494,14 +534,18 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                             : (_showProcessed
                             ? _processedText
                             : _translatedText),
-                        style: const TextStyle(fontSize: 15),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: textColor,
+                        ),
                       ),
                       const SizedBox(height: 20),
-                      const Text(
+                      Text(
                         "Captured Signs",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: textColor,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -513,13 +557,18 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                           final conf = confidences[index];
 
                           return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            margin:
+                            const EdgeInsets.symmetric(horizontal: 8),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: isDark
+                                  ? Colors.grey[850]
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black12,
+                                  color: isDark
+                                      ? Colors.black54
+                                      : Colors.black12,
                                   blurRadius: 6,
                                   offset: const Offset(0, 3),
                                 ),
@@ -529,7 +578,8 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                               children: [
                                 Expanded(
                                   child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius:
+                                    BorderRadius.circular(16),
                                     child: Image.file(
                                       File(img.path),
                                       fit: BoxFit.cover,
@@ -540,16 +590,19 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                                 const SizedBox(height: 8),
                                 Text(
                                   "Prediction: $letter",
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
+                                    color: textColor,
                                   ),
                                 ),
                                 Text(
                                   "Confidence: ${(conf * 100).toStringAsFixed(1)}%",
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.grey,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
