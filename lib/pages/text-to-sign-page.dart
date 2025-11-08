@@ -9,6 +9,8 @@ import 'package:flutter/foundation.dart';
 import 'package:signspeak/services/history_db.dart';
 import 'package:signspeak/services/history_item.dart';
 import 'package:intl/intl.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'dart:convert';
 
 class TextToSignPage extends StatefulWidget {
   const TextToSignPage({super.key});
@@ -24,24 +26,59 @@ class _TextToSignPageState extends State<TextToSignPage> {
   List<HistoryItem> history = [];
   String _lastTranslatedText = "";
   final supabase = Supabase.instance.client;
+  final SpeechToText _speech = SpeechToText();
+  bool _isListening = false;
+  String _spokenText = "";
 
   @override
   void initState() {
     super.initState();
     _loadHistory();
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    bool available = await _speech.initialize();
+    if (!available) {
+      debugPrint("Speech recognition not available");
+    }
+  }
+  Future<void> _startListening() async {
+    await _speech.listen(
+      localeId: "en_US", // or "fil_PH" for Tagalog
+      onResult: (result) {
+        setState(() {
+          _controller.text = result.recognizedWords;
+        });
+      },
+    );
+
+    setState(() => _isListening = true);
+  }
+  Future<void> _stopListening() async {
+    await _speech.stop();
+    setState(() => _isListening = false);
+  }
+  void _toggleMic() {
+    if (_isListening) {
+      _stopListening();
+    } else {
+      _startListening();
+    }
   }
 
   Future<void> _loadHistory() async {
     history = await HistoryDatabase.instance.fetchAll();
     setState(() {});
   }
-
   Future<void> fetchPoseAndVisualize(String userInput) async {
     try {
       setState(() {
         isLoading = true;
         gifFile = null;
       });
+
+      final translatedText = await _translateToEnglish(userInput);
 
       final localHistory = await HistoryDatabase.instance.getByText(userInput);
       if (localHistory != null) {
@@ -58,7 +95,7 @@ class _TextToSignPageState extends State<TextToSignPage> {
       final existing = await supabase
           .from('sign_gifs')
           .select()
-          .eq('text', userInput)
+          .eq('text', translatedText)
           .maybeSingle();
 
       if (existing != null) {
@@ -87,7 +124,7 @@ class _TextToSignPageState extends State<TextToSignPage> {
       }
 
       final url =
-          "https://us-central1-sign-mt.cloudfunctions.net/spoken_text_to_signed_pose?text=${Uri.encodeComponent(userInput)}&spoken=en&signed=ase";
+          "https://us-central1-sign-mt.cloudfunctions.net/spoken_text_to_signed_pose?text=${Uri.encodeComponent(translatedText)}&spoken=en&signed=ase";
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode != 200) {
@@ -137,13 +174,25 @@ class _TextToSignPageState extends State<TextToSignPage> {
       });
     }
   }
-
   static Future<File> _generateGif(Map<String, dynamic> params) async {
     Pose pose = params["pose"];
     String path = params["path"];
     PoseVisualizer p = PoseVisualizer(pose, thickness: 2);
     return await p.saveGif(path, p.draw());
   }
+  Future<String> _translateToEnglish(String text) async {
+    final uri = Uri.parse(
+      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${Uri.encodeComponent(text)}",
+    );
+
+    final response = await http.get(uri);
+    if (response.statusCode != 200) return text;
+
+    final data = jsonDecode(response.body);
+    final english = data[0][0][0];
+    return english;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +316,7 @@ class _TextToSignPageState extends State<TextToSignPage> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
+                      maxLines: 3,
                       style: TextStyle(color: colorScheme.onSurface),
                       decoration: InputDecoration(
                         hintText: "Type a message...",
@@ -281,10 +331,11 @@ class _TextToSignPageState extends State<TextToSignPage> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.mic, color: colorScheme.primary),
-                    onPressed: () {
-                      // TODO: integrate speech-to-text
-                    },
+                    icon: Icon(
+                      _isListening ? Icons.stop_circle : Icons.mic,
+                      color: colorScheme.primary,
+                    ),
+                    onPressed: _toggleMic,
                   ),
                   IconButton(
                     icon: Icon(Icons.send_rounded,
@@ -307,6 +358,10 @@ class _TextToSignPageState extends State<TextToSignPage> {
     if (text.isEmpty) return;
     FocusScope.of(context).unfocus();
     fetchPoseAndVisualize(text);
+    _stopListening();
+    setState(() {
+      _lastTranslatedText = text;
+    });
     _controller.clear();
   }
 
