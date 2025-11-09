@@ -20,9 +20,6 @@ class SignToTextPage extends StatefulWidget {
 }
 
 class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProviderStateMixin {
-  // Modes
-  int selectedMode = 1; // 0 = Real-time, 1 = Runtime
-
   // Cameras
   CameraController? cameraController;
   List<CameraDescription>? cameras;
@@ -34,10 +31,12 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
 
   // Hand Landmark
   HandLandmarkerPlugin? _plugin;
+  int _stableFrameCount = 0;
   List<Hand> _landmarks = [];
   List<Hand> _previousHands = [];
   bool _isInitialized = false;
   bool _isDetecting = false;
+  bool _isProcessing = false;
 
   // Results
   List<XFile> pictures = [];
@@ -129,8 +128,9 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
 
     setState(() {
       _isRecording = false;
+      _isProcessing = false;
     });
-    _processedText = await processText(_translatedText) ?? '';
+    // _processedText = await processText(_translatedText) ?? '';
     debugPrint("Recording stopped — frame processing paused.");
   }
   // Sign Translations
@@ -146,10 +146,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
     }
   }
   Future<void> _processCameraImage(CameraImage image) async {
-    // If detection is already in progress, skip this frame.
     if (_isDetecting || !_isInitialized || _plugin == null) return;
-
-    // Set the flag to true to indicate processing has started.
     _isDetecting = true;
 
     try {
@@ -157,54 +154,69 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
         image,
         cameraController!.description.sensorOrientation,
       );
+
       if (mounted) {
         setState(() => _landmarks = hands);
       }
 
-      // Detect change compared to previous landmarks
-      if (_previousHands.isNotEmpty && hands.isNotEmpty && _previousHands.isNotEmpty) {
+      // If both current and previous hands are detected
+      if (_previousHands.isNotEmpty && hands.isNotEmpty) {
         final currentHand = hands.first;
         final previousHand = _previousHands.first;
 
-        bool significantChange = _hasSignificantChange(previousHand, currentHand);
-        // get predicted_letter
-        if (significantChange && _isRecording) {
+        // Check if current and previous hand landmarks are almost identical
+        bool same = _areHandsSame(previousHand, currentHand);
+
+        if (same) {
+          _stableFrameCount++;
+        } else {
+          _stableFrameCount = 0; // reset if movement detected
+        }
+
+        // When hands are stable for 15 consecutive frames
+        if (_stableFrameCount >= 15 && _isRecording && !_isProcessing) {
+          _stableFrameCount = 0; // reset after capturing
+
           try {
             final XFile imageFile = await cameraController!.takePicture();
+            setState(() => _isProcessing = true);
 
-            // Send to API
             final result = await _predictSignLanguage(File(imageFile.path));
-            debugPrint(result.toString());
-
             if (result != null) {
               final predictedLetter = result['predicted_letter'];
               final confidence = result['confidence'];
-              debugPrint("Detected: $predictedLetter ($confidence)");
 
-              // Append to translated text
-              if(confidence > 0.7){
+              if (confidence > 0.7) {
                 setState(() {
+                  _isProcessing = false;
                   pictures.add(imageFile);
                   predicted_letters.add(predictedLetter);
                   confidences.add(confidence);
                   _translatedText += predictedLetter;
                 });
+                debugPrint("Detected: $predictedLetter ($confidence)");
               }
             }
           } catch (e) {
             debugPrint("Error capturing or sending frame: $e");
+          } finally {
+            setState(() => _isProcessing = false);
           }
         }
       }
+
+      // Update previous hand landmarks
       if (mounted) {
         setState(() => _previousHands = _landmarks);
       }
+
     } catch (e) {
       debugPrint('Error detecting landmarks: $e');
     } finally {
       _isDetecting = false;
     }
   }
+
   Future<String?> processText(String text) async {
     final apiKey = dotenv.env['GROQ'];
     if (apiKey == null || apiKey.isEmpty) {
@@ -259,6 +271,22 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       debugPrint("⚠Error during text process: $e");
     }
     return null;
+  }
+  bool _areHandsSame(Hand prev, Hand curr) {
+    final threshold = widget.threshold;
+    if (prev.landmarks.length != curr.landmarks.length) return false;
+
+    for (int i = 0; i < prev.landmarks.length; i++) {
+      final dx = (curr.landmarks[i].x - prev.landmarks[i].x).abs();
+      final dy = (curr.landmarks[i].y - prev.landmarks[i].y).abs();
+      final dz = (curr.landmarks[i].z - prev.landmarks[i].z).abs();
+
+      // If any landmark moved more than the threshold, consider it changed
+      if (dx > threshold || dy > threshold || dz > threshold) {
+        return false;
+      }
+    }
+    return true;
   }
   bool _hasSignificantChange(Hand prev, Hand curr) {
     final threshold = widget.threshold;
@@ -343,25 +371,27 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
             ),
           ),
 
-          // ===== HAND LANDMARK OVERLAY =====
-          FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.width *
-                  cameraController!.value.aspectRatio,
-              child: CustomPaint(
-                painter: LandmarkPainter(
-                  hands: _landmarks,
-                  previewSize: previewSize,
-                  lensDirection: controller.description.lensDirection,
-                  sensorOrientation: controller.description.sensorOrientation,
-                ),
+        // ===== HAND LANDMARK OVERLAY =====
+        FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.width *
+                cameraController!.value.aspectRatio,
+            child: !_isProcessing
+                ? CustomPaint(
+              painter: LandmarkPainter(
+                hands: _landmarks,
+                previewSize: previewSize,
+                lensDirection: controller.description.lensDirection,
+                sensorOrientation: controller.description.sensorOrientation,
               ),
-            ),
+            )
+                : Center(child: CircularProgressIndicator(color: Color(0xFFB9D9EB)),),
           ),
+        ),
 
-          // ===== TRANSLATED TEXT OVERLAY =====
+        // ===== TRANSLATED TEXT OVERLAY =====
           if (_translatedText.isNotEmpty)
             Positioned(
               bottom: 220,
