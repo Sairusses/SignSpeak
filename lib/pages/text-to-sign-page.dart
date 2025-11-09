@@ -317,6 +317,7 @@ class _TextToSignPageState extends State<TextToSignPage> {
                     child: TextField(
                       controller: _controller,
                       maxLines: 3,
+                      textAlignVertical: TextAlignVertical.center,
                       style: TextStyle(color: colorScheme.onSurface),
                       decoration: InputDecoration(
                         hintText: "Type a message...",
@@ -326,6 +327,7 @@ class _TextToSignPageState extends State<TextToSignPage> {
                               : Colors.grey[600],
                         ),
                         border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 18),
                       ),
                       onSubmitted: (text) => _handleSend(),
                     ),
