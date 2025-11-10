@@ -1,15 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:gap/gap.dart';
 import 'package:hand_landmarker/hand_landmarker.dart';
 import 'package:signspeak/services/landmark_painter.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:image/image.dart' as img;
+import 'dart:typed_data';
 
 class SignToTextPage extends StatefulWidget {
   final double threshold;
@@ -45,6 +47,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
   String _translatedText = '';
   String _processedText = '';
   bool _showProcessed = true;
+  bool _showPanel = false;
 
   @override
   void initState() {
@@ -129,8 +132,9 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
     setState(() {
       _isRecording = false;
       _isProcessing = false;
+      _showPanel = true;
     });
-    // _processedText = await processText(_translatedText) ?? '';
+    _processedText = await processText(_translatedText) ?? '';
     debugPrint("Recording stopped — frame processing paused.");
   }
   // Sign Translations
@@ -173,23 +177,32 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
           _stableFrameCount = 0; // reset if movement detected
         }
 
-        // When hands are stable for 15 consecutive frames
-        if (_stableFrameCount >= 15 && _isRecording && !_isProcessing) {
+        if (_stableFrameCount >= 20 && _isRecording && !_isProcessing) {
           _stableFrameCount = 0; // reset after capturing
 
           try {
             final XFile imageFile = await cameraController!.takePicture();
             setState(() => _isProcessing = true);
 
-            final result = await _predictSignLanguage(File(imageFile.path));
+            // Crop image around detected hand
+            final croppedFile = await _cropHandRegion(
+              File(imageFile.path),
+              currentHand,
+              lensDirection: cameraController!.description.lensDirection,
+              sensorOrientation: cameraController!.description.sensorOrientation,
+              previewSize: cameraController!.value.previewSize!,
+              cropSize: 500
+            );
+
+            final result = await _predictSignLanguage(croppedFile);
             if (result != null) {
               final predictedLetter = result['predicted_letter'];
               final confidence = result['confidence'];
 
-              if (confidence > 0.7) {
+              if (confidence > 0.75) {
                 setState(() {
                   _isProcessing = false;
-                  pictures.add(imageFile);
+                  pictures.add(XFile(croppedFile.path));
                   predicted_letters.add(predictedLetter);
                   confidences.add(confidence);
                   _translatedText += predictedLetter;
@@ -216,6 +229,68 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       _isDetecting = false;
     }
   }
+  Future<File> _cropHandRegion(
+      File imageFile,
+      Hand hand, {
+        required CameraLensDirection lensDirection,
+        required int sensorOrientation,
+        required Size previewSize,
+        required int cropSize,
+      }) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      img.Image? original = img.decodeImage(bytes);
+      if (original == null) return imageFile;
+
+      // 1 Get middle finger MCP (index 9)
+      final lm = hand.landmarks[9];
+
+      // 2 Map to preview coordinates
+      double cx = (lm.x - 0.5) * previewSize.width;
+      double cy = (lm.y - 0.5) * previewSize.height;
+
+      // 3️ Apply painter-style transforms
+      double rad = sensorOrientation * math.pi / 180;
+      double rotatedX = cx * math.cos(rad) - cy * math.sin(rad);
+      double rotatedY = cx * math.sin(rad) + cy * math.cos(rad);
+      cx = rotatedX;
+      cy = rotatedY;
+
+      if (lensDirection == CameraLensDirection.front) {
+        cx = -cx;
+      }
+
+      // 4️ Convert to image coordinates
+      final scaleX = original.width / previewSize.height;
+      final scaleY = original.height / previewSize.width;
+      int centerX = ((cx + previewSize.width / 2) * scaleX).round();
+      int centerY = ((cy + previewSize.height / 2) * scaleY).round();
+
+      // 5️ Define square crop around center
+      int half = (cropSize / 2).round();
+      int x = (centerX - half).clamp(0, original.width - 1) - 200;
+      int y = (centerY - half).clamp(0, original.height - 1) + 300;
+      int w = (x + cropSize > original.width) ? original.width - x : cropSize;
+      int h = (y + cropSize > original.height) ? original.height - y : cropSize;
+
+      // 6️ Crop and rotate to match painter
+      final cropped = img.copyCrop(original, x: x, y: y, width: w, height: h);
+
+      // 7️ Save
+      final tempDir = Directory.systemTemp;
+      final output = File(
+        '${tempDir.path}/cropped_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      await output.writeAsBytes(img.encodeJpg(cropped));
+
+      return output;
+    } catch (e) {
+      debugPrint("Error cropping hand region: $e");
+      return imageFile;
+    }
+  }
+
+
 
   Future<String?> processText(String text) async {
     final apiKey = dotenv.env['GROQ'];
@@ -288,23 +363,6 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
     }
     return true;
   }
-  bool _hasSignificantChange(Hand prev, Hand curr) {
-    final threshold = widget.threshold;
-    if (prev.landmarks.length != curr.landmarks.length) return true;
-
-    for (int i = 0; i < prev.landmarks.length; i++) {
-      final dx = (curr.landmarks[i].x - prev.landmarks[i].x).abs();
-      final dy = (curr.landmarks[i].y - prev.landmarks[i].y).abs();
-      final dz = (curr.landmarks[i].z - prev.landmarks[i].z).abs();
-
-      // if any coordinate changed significantly
-      if (dx > threshold || dy > threshold || dz > threshold) {
-        return true;
-      }
-    }
-
-    return false;
-  }
   Future<Map<String, dynamic>?> _predictSignLanguage(File imageFile) async {
     try {
       final uri = Uri.parse("https://sairusses-alphabet-sign-api.hf.space/predict");
@@ -352,8 +410,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       );
     }
 
-    final controller = cameraController!;
-    final previewSize = controller.value.previewSize!;
+    final previewSize = cameraController!.value.previewSize!;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -370,30 +427,51 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
               child: CameraPreview(cameraController!),
             ),
           ),
-
-        // ===== HAND LANDMARK OVERLAY =====
-        FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.width *
+          // ===== HAND LANDMARK OVERLAY =====
+          FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.width *
                 cameraController!.value.aspectRatio,
-            child: !_isProcessing
-                ? CustomPaint(
-              painter: LandmarkPainter(
-                hands: _landmarks,
-                previewSize: previewSize,
-                lensDirection: controller.description.lensDirection,
-                sensorOrientation: controller.description.sensorOrientation,
-              ),
-            )
-                : Center(child: CircularProgressIndicator(color: Color(0xFFB9D9EB)),),
+                child: !_isProcessing
+                  ? CustomPaint(
+                  painter: LandmarkPainter(
+                    hands: _landmarks,
+                    previewSize: previewSize,
+                    lensDirection: cameraController!.description.lensDirection,
+                    sensorOrientation: cameraController!.description.sensorOrientation,
+                  ),
+                )
+                    : Center(child: CircularProgressIndicator(color: Color(0xFF004687)),),
+            ),
           ),
-        ),
-
-        // ===== TRANSLATED TEXT OVERLAY =====
-          if (_translatedText.isNotEmpty)
-            Positioned(
+          // ===== CENTER HAND GUIDE =====
+          Align(
+            alignment: Alignment(0, -0.25), // x=0 center, y=-0.3 moves slightly up
+            child: Container(
+              width: 250, // width of the hand box
+              height: 250, // height of the hand box
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.8), // border color
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white.withOpacity(0.1), // subtle fill
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // ===== TRANSLATED TEXT OVERLAY =====
+            if (_translatedText.isNotEmpty)
+              Positioned(
               bottom: 220,
               left: 0,
               right: 0,
@@ -490,167 +568,181 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
             ),
           ),
 
-          // ===== DRAGGABLE SLIDER =====
-          if (!_isRecording && pictures.isNotEmpty)
-            DraggableScrollableSheet(
-              initialChildSize: 0.25,
-              minChildSize: 0.2,
-              maxChildSize: 0.85,
-              builder: (context, scrollController) {
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: sheetColor,
-                    borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(24)),
-                    border: Border.all(
-                      color: borderColor,
-                      width: 1,
+          // ===== PROCESSED SIGNS PANEL BUTTON =====
+          Positioned(
+            left: 16,
+            bottom: 135,
+            child: Column(
+              children: [
+                // Toggle Button
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showPanel = !_showPanel;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white12 : Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark ? Colors.black45 : Colors.black26,
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.menu_book,
+                      size: 28,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
-                  child: ListView(
-                    controller: scrollController,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 60,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white24
-                                : Colors.grey[400],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                ),
+
+                const SizedBox(height: 10),
+
+              ],
+            ),
+          ),
+          // ===== MODERN PANEL =====
+          if (_showPanel && !_isRecording)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 280, // width of the side panel
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: sheetColor.withOpacity(0.95),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: const Offset(3, 0),
+                    ),
+                  ],
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Close Button
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _showPanel = false;
+                          });
+                        },
+                        child: Icon(
+                          Icons.close,
+                          color: isDark ? Colors.white70 : Colors.black54,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Processed Text",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: textColor,
-                            ),
-                          ),
-                          if (_processedText.isNotEmpty)
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _showProcessed = !_showProcessed;
-                                });
-                              },
-                              child: Text(
-                                _showProcessed
-                                    ? "Show Raw"
-                                    : "Show Corrected",
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.blueAccent,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                        ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Processed Text
+                    Text(
+                      "Processed Text",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: textColor,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _processedText.isEmpty
-                            ? (_translatedText.isEmpty
-                            ? "No text yet..."
-                            : _translatedText)
-                            : (_showProcessed
-                            ? _processedText
-                            : _translatedText),
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: textColor,
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _processedText.isEmpty
+                          ? (_translatedText.isEmpty ? "No text yet..." : _translatedText)
+                          : (_showProcessed ? _processedText : _translatedText),
+                      style: TextStyle(fontSize: 15, color: textColor),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Captured Signs
+                    Text(
+                      "Captured Signs",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        "Captured Signs",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      CarouselSlider.builder(
+                    ),
+                    const SizedBox(height: 10),
+
+                    Expanded(
+                      child: ListView.builder(
                         itemCount: pictures.length,
-                        itemBuilder: (context, index, realIdx) {
+                        itemBuilder: (context, index) {
                           final img = pictures[index];
                           final letter = predicted_letters[index];
                           final conf = confidences[index];
 
                           return Container(
-                            margin:
-                            const EdgeInsets.symmetric(horizontal: 8),
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.grey[850]
-                                  : Colors.white,
+                              color: isDark ? Colors.grey[850] : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: isDark
-                                      ? Colors.black54
-                                      : Colors.black12,
+                                  color: isDark ? Colors.black54 : Colors.black12,
                                   blurRadius: 6,
                                   offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
-                            child: Column(
+                            child: Row(
                               children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.file(
+                                    File(img.path),
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
                                 Expanded(
-                                  child: ClipRRect(
-                                    borderRadius:
-                                    BorderRadius.circular(16),
-                                    child: Image.file(
-                                      File(img.path),
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Prediction: $letter",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      Text(
+                                        "Confidence: ${(conf * 100).toStringAsFixed(1)}%",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDark ? Colors.white70 : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "Prediction: $letter",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: textColor,
-                                  ),
-                                ),
-                                Text(
-                                  "Confidence: ${(conf * 100).toStringAsFixed(1)}%",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDark
-                                        ? Colors.white70
-                                        : Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
                               ],
                             ),
                           );
                         },
-                        options: CarouselOptions(
-                          height: 300,
-                          enlargeCenterPage: true,
-                          enableInfiniteScroll: false,
-                          viewportFraction: 0.8,
-                        ),
                       ),
-                    ],
-                  ),
-                );
-              },
+                    ),
+                  ],
+                ),
+              ),
             ),
         ],
       ),
