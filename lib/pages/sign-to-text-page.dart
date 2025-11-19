@@ -229,14 +229,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       _isDetecting = false;
     }
   }
-  Future<File> _cropHandRegion(
-      File imageFile,
-      Hand hand, {
-        required CameraLensDirection lensDirection,
-        required int sensorOrientation,
-        required Size previewSize,
-        required int cropSize,
-      }) async {
+  Future<File> _cropHandRegion(File imageFile, Hand hand, {required CameraLensDirection lensDirection, required int sensorOrientation, required Size previewSize, required int cropSize,}) async {
     try {
       final bytes = await imageFile.readAsBytes();
       img.Image? original = img.decodeImage(bytes);
@@ -289,8 +282,6 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       return imageFile;
     }
   }
-
-
 
   Future<String?> processText(String text) async {
     final apiKey = dotenv.env['GROQ'];

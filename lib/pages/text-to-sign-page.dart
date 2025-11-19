@@ -11,6 +11,7 @@ import 'package:signspeak/services/history_item.dart';
 import 'package:intl/intl.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'dart:convert';
+import 'dart:async';
 
 class TextToSignPage extends StatefulWidget {
   const TextToSignPage({super.key});
@@ -27,6 +28,7 @@ class _TextToSignPageState extends State<TextToSignPage> {
   String _lastTranslatedText = "";
   final supabase = Supabase.instance.client;
   final SpeechToText _speech = SpeechToText();
+  Timer? _timer;
   bool _isListening = false;
   String _spokenText = "";
 
@@ -44,18 +46,24 @@ class _TextToSignPageState extends State<TextToSignPage> {
     }
   }
   Future<void> _startListening() async {
+    _timer?.cancel();
     await _speech.listen(
-      localeId: "en_US", // or "fil_PH" for Tagalog
+      localeId: "en_US", //
       onResult: (result) {
         setState(() {
           _controller.text = result.recognizedWords;
         });
       },
     );
-
     setState(() => _isListening = true);
+    _timer = Timer(const Duration(seconds: 5), () {
+      if (_isListening) {
+        _stopListening();
+      }
+    });
   }
   Future<void> _stopListening() async {
+    _timer?.cancel();
     await _speech.stop();
     setState(() => _isListening = false);
   }
