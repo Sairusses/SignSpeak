@@ -163,23 +163,20 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
         setState(() => _landmarks = hands);
       }
 
-      // If both current and previous hands are detected
       if (_previousHands.isNotEmpty && hands.isNotEmpty) {
         final currentHand = hands.first;
         final previousHand = _previousHands.first;
 
-        // Check if current and previous hand landmarks are almost identical
         bool same = _areHandsSame(previousHand, currentHand);
 
         if (same) {
           _stableFrameCount++;
         } else {
-          _stableFrameCount = 0; // reset if movement detected
+          _stableFrameCount = 0;
         }
 
         if (_stableFrameCount >= 20 && _isRecording && !_isProcessing) {
-          _stableFrameCount = 0; // reset after capturing
-
+          _stableFrameCount = 0;
           try {
             final XFile imageFile = await cameraController!.takePicture();
             setState(() => _isProcessing = true);
@@ -187,11 +184,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
             // Crop image around detected hand
             final croppedFile = await _cropHandRegion(
               File(imageFile.path),
-              currentHand,
-              lensDirection: cameraController!.description.lensDirection,
-              sensorOrientation: cameraController!.description.sensorOrientation,
-              previewSize: cameraController!.value.previewSize!,
-              cropSize: 500
+              cropSize: 750
             );
 
             final result = await _predictSignLanguage(croppedFile);
@@ -199,7 +192,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
               final predictedLetter = result['predicted_letter'];
               final confidence = result['confidence'];
 
-              if (confidence > 0.75) {
+              if (confidence > 0.4) {
                 setState(() {
                   _isProcessing = false;
                   pictures.add(XFile(croppedFile.path));
@@ -218,7 +211,6 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
         }
       }
 
-      // Update previous hand landmarks
       if (mounted) {
         setState(() => _previousHands = _landmarks);
       }
@@ -229,47 +221,35 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       _isDetecting = false;
     }
   }
-  Future<File> _cropHandRegion(File imageFile, Hand hand, {required CameraLensDirection lensDirection, required int sensorOrientation, required Size previewSize, required int cropSize,}) async {
+  Future<File> _cropHandRegion(File imageFile, {required int cropSize,}) async {
     try {
       final bytes = await imageFile.readAsBytes();
       img.Image? original = img.decodeImage(bytes);
       if (original == null) return imageFile;
 
-      // 1 Get middle finger MCP (index 9)
-      final lm = hand.landmarks[9];
+      final int imgW = original.width;
+      final int imgH = original.height;
 
-      // 2 Map to preview coordinates
-      double cx = (lm.x - 0.5) * previewSize.width;
-      double cy = (lm.y - 0.5) * previewSize.height;
+      // ---- CENTER-BASED CROP ----
+      int centerX = imgW ~/ 2;
+      int centerY = imgH ~/ 2;
 
-      // 3️ Apply painter-style transforms
-      double rad = sensorOrientation * math.pi / 180;
-      double rotatedX = cx * math.cos(rad) - cy * math.sin(rad);
-      double rotatedY = cx * math.sin(rad) + cy * math.cos(rad);
-      cx = rotatedX;
-      cy = rotatedY;
+      int half = cropSize ~/ 2;
 
-      if (lensDirection == CameraLensDirection.front) {
-        cx = -cx;
-      }
+      int x = (centerX - half).clamp(0, imgW - 1);
+      int y = (centerY - half).clamp(0, imgH - 1) - 150;
 
-      // 4️ Convert to image coordinates
-      final scaleX = original.width / previewSize.height;
-      final scaleY = original.height / previewSize.width;
-      int centerX = ((cx + previewSize.width / 2) * scaleX).round();
-      int centerY = ((cy + previewSize.height / 2) * scaleY).round();
+      int w = (x + cropSize > imgW) ? imgW - x : cropSize;
+      int h = (y + cropSize > imgH) ? imgH - y : cropSize;
 
-      // 5️ Define square crop around center
-      int half = (cropSize / 2).round();
-      int x = (centerX - half).clamp(0, original.width - 1) - 200;
-      int y = (centerY - half).clamp(0, original.height - 1) + 300;
-      int w = (x + cropSize > original.width) ? original.width - x : cropSize;
-      int h = (y + cropSize > original.height) ? original.height - y : cropSize;
+      final cropped = img.copyCrop(
+        original,
+        x: x,
+        y: y,
+        width: w,
+        height: h,
+      );
 
-      // 6️ Crop and rotate to match painter
-      final cropped = img.copyCrop(original, x: x, y: y, width: w, height: h);
-
-      // 7️ Save
       final tempDir = Directory.systemTemp;
       final output = File(
         '${tempDir.path}/cropped_${DateTime.now().millisecondsSinceEpoch}.jpg',
@@ -277,8 +257,9 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
       await output.writeAsBytes(img.encodeJpg(cropped));
 
       return output;
+
     } catch (e) {
-      debugPrint("Error cropping hand region: $e");
+      debugPrint("Error cropping at center: $e");
       return imageFile;
     }
   }
