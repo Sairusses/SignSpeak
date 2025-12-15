@@ -15,6 +15,15 @@ class _AlphabetsPageState extends State<AlphabetsPage> {
   String? selectedLetter;
   String? selectedAsset;
 
+  // KIDS PALETTE: Vibrant, candy-like colors
+  final List<Color> _blockColors = [
+    const Color(0xFFFF6B6B), // Red/Pink
+    const Color(0xFF4ECDC4), // Teal
+    const Color(0xFFFFD93D), // Yellow
+    const Color(0xFF6A0572), // Purple
+    const Color(0xFFFF9F1C), // Orange
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -42,148 +51,269 @@ class _AlphabetsPageState extends State<AlphabetsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Determine background brightness
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF0F1115) : const Color(0xfff9f9fb);
-    final keyColor = isDark ? const Color(0xFF1C1F26) : Colors.white;
-    final keyTextColor = isDark ? Colors.white : Colors.black87;
+
+    // Background color: Soft Mint in Light Mode (Not blue/cream), Deep Navy in Dark Mode
+    final bgColor = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFE3FDF5);
 
     return Scaffold(
       backgroundColor: bgColor,
-
-      body: loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
-          : Column(
+      body: Stack(
         children: [
-          const SizedBox(height: 40),
-
-          // TITLE
-          Text(
-            "ALPHABETS",
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+          // ------------------------------------------------
+          // 1. PLAYFUL BACKGROUND SHAPES (STACK & CIRCLES)
+          // ------------------------------------------------
+          if (!isDark) ...[
+            Positioned(
+              top: -50,
+              left: -50,
+              child: _buildCircle(200, const Color(0xFFFFD93D).withOpacity(0.3)), // Yellow blob
             ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // EXPANDED PREVIEW AREA
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.blueAccent.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: selectedLetter == null
-                  ? Center(
-                child: Text(
-                  "Tap a letter to view",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: isDark
-                        ? Colors.white70
-                        : Colors.black54,
-                  ),
-                ),
-              )
-                  : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // IMAGE
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      selectedAsset!,
-                      height: 160,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // LETTER
-                  Text(
-                    selectedLetter!,
-                    style: GoogleFonts.poppins(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
+            Positioned(
+              top: 100,
+              right: -30,
+              child: _buildCircle(120, const Color(0xFFFF6B6B).withOpacity(0.2)), // Red blob
             ),
-          ),
+            Positioned(
+              bottom: -40,
+              left: 40,
+              child: _buildCircle(180, const Color(0xFF4ECDC4).withOpacity(0.25)), // Teal blob
+            ),
+            Positioned(
+              bottom: 200,
+              right: 20,
+              child: _buildCircle(60, const Color(0xFF6A0572).withOpacity(0.15)), // Purple dot
+            ),
+          ],
 
-          const SizedBox(height: 30),
+          // ------------------------------------------------
+          // 2. MAIN CONTENT
+          // ------------------------------------------------
+          loading
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF6B6B)))
+              : SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
 
-          // KEYBOARD GRID
-          Expanded(
-            flex: 4,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,  // keyboard-like tight grid
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemCount: gifs.length,
-                itemBuilder: (context, index) {
-                  final item = gifs[index];
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedLetter = item["text"];
-                        selectedAsset = item["asset_path"];
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      decoration: BoxDecoration(
-                        color: keyColor,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                            isDark ? Colors.black.withOpacity(0.4) : Colors.grey.withOpacity(0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          )
-                        ],
-                        border: Border.all(
-                          color: selectedLetter == item["text"]
-                              ? Colors.blueAccent
-                              : Colors.transparent,
-                          width: 2,
-                        ),
+                // TITLE HEADER
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.star_rounded, color: Colors.orange, size: 32),
+                    const SizedBox(width: 8),
+                    Text(
+                      "ALPHABETS",
+                      style: GoogleFonts.fredoka( // Friendly rounded font
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF2D3436),
+                        letterSpacing: 1.5,
                       ),
-                      child: Center(
-                        child: Text(
-                          item["text"],
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: keyTextColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.star_rounded, color: Colors.orange, size: 32),
+                  ],
+                ),
+
+                const SizedBox(height: 15),
+
+                // DISPLAY AREA (TV / BOARD STYLE)
+                Expanded(
+                  flex: 4,
+                  child: Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF16213E) : Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: const Color(0xFF4ECDC4),
+                        width: 4,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4ECDC4).withOpacity(0.4),
+                          blurRadius: 0, // Solid shadow for cartoon look
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      transitionBuilder: (Widget child, Animation<double> animation) {
+                        return ScaleTransition(scale: animation, child: child);
+                      },
+                      child: selectedLetter == null
+                          ? _buildEmptyState()
+                          : _buildSelectedState(isDark),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 25),
+
+                // KEYBOARD GRID (CANDY BLOCKS)
+                Expanded(
+                  flex: 5,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.5),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                    ),
+                    child: GridView.builder(
+                      padding: const EdgeInsets.only(bottom: 20, top: 10),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 5, // Wider buttons for kids
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.85,
+                      ),
+                      itemCount: gifs.length,
+                      itemBuilder: (context, index) {
+                        final item = gifs[index];
+                        final colorIndex = index % _blockColors.length;
+                        final btnColor = _blockColors[colorIndex];
+                        final isSelected = selectedLetter == item["text"];
+
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedLetter = item["text"];
+                              selectedAsset = item["asset_path"];
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              color: isSelected ? btnColor.withOpacity(0.8) : btnColor,
+                              borderRadius: BorderRadius.circular(16),
+                              // 3D Block Effect
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: Colors.black.withOpacity(0.2),
+                                  width: isSelected ? 0 : 6.0,
+                                ),
+                              ),
+                              boxShadow: isSelected
+                                  ? []
+                                  : [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                            ),
+                            transform: isSelected
+                                ? Matrix4.translationValues(0, 4, 0) // Push down effect
+                                : Matrix4.identity(),
+                            child: Center(
+                              child: Text(
+                                item["text"],
+                                style: GoogleFonts.fredoka(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        offset: const Offset(1, 1),
+                                        blurRadius: 2,
+                                      )
+                                    ]
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
           ),
-
-          const SizedBox(height: 20),
         ],
       ),
+    );
+  }
+
+  // Helper widget for background circles
+  Widget _buildCircle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      key: const ValueKey("empty"),
+      children: [
+        const Icon(Icons.touch_app_rounded, size: 48, color: Colors.grey),
+        const SizedBox(height: 10),
+        Text(
+          "Pick a Letter!",
+          style: GoogleFonts.fredoka(
+            fontSize: 20,
+            color: Colors.grey,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelectedState(bool isDark) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      key: ValueKey(selectedLetter),
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black26 : Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.all(8.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                selectedAsset!,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.image_not_supported, size: 50, color: Colors.redAccent),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFD93D),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            selectedLetter!,
+            style: GoogleFonts.fredoka(
+              fontSize: 48,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF2D3436),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

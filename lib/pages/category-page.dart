@@ -42,176 +42,285 @@ class _CategoryPageState extends State<CategoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF0F1115) : const Color(0xfff6f8fb);
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final subtitleColor = isDark ? Colors.grey.shade400 : Colors.grey.shade700;
+    // Kids Theme: Soft Mint/Cloud background
+    final Color bgBase = const Color(0xFFE0F2F1);
+    final Color textDark = const Color(0xFF263238);
 
-    final formattedCategory = widget.category.replaceAll('_', ' ').toUpperCase();
+    // Helper to make "CATEGORY_NAME" -> "Category Name"
+    final friendlyTitle = widget.category
+        .replaceAll('_', ' ')
+        .toLowerCase()
+        .split(' ')
+        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
+        .join(' ');
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: bgBase,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        foregroundColor: textColor,
+        // Custom "Back" button that looks like a candy/pill
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: Offset(0, 2))
+                ]
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.orange),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
         title: Text(
-          formattedCategory,
-          style: GoogleFonts.poppins(
-            color: textColor,
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-            letterSpacing: 1,
+          friendlyTitle,
+          style: GoogleFonts.fredoka(
+            color: textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 26, // Big title
           ),
         ),
       ),
       body: loading
-          ? const Center(
-        child: CircularProgressIndicator(color: Colors.blueAccent),
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: Colors.orange, strokeWidth: 6),
+            const SizedBox(height: 16),
+            Text("Loading Magic... ✨", style: GoogleFonts.fredoka(fontSize: 18, color: Colors.grey)),
+          ],
+        ),
       )
           : gifs.isEmpty
           ? Center(
-        child: Text(
-          "No GIFs found for this category.",
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            color: subtitleColor,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.sentiment_dissatisfied_rounded, size: 80, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              "Uh oh! No signs here yet! 🙈",
+              style: GoogleFonts.fredoka(
+                fontSize: 20,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       )
           : ListView.separated(
-        padding:
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         itemCount: gifs.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
           final gif = gifs[index];
-          return _buildGifListTile(gif, isDark);
+          // Pass index to create color patterns
+          return _buildKidListCard(gif, index);
         },
       ),
     );
   }
 
-  Widget _buildGifListTile(Map<String, dynamic> gif, bool isDark) {
-    final gradientColors = isDark
-        ? [const Color(0xFF1E3A8A), const Color(0xFF2563EB)]
-        : [Colors.indigoAccent.shade100, Colors.blueAccent.shade200];
+  Widget _buildKidListCard(Map<String, dynamic> gif, int index) {
+    // A fun palette of colors to cycle through
+    final List<Color> colors = [
+      const Color(0xFF42A5F5), // Blue
+      const Color(0xFF66BB6A), // Green
+      const Color(0xFFFFA726), // Orange
+      const Color(0xFFAB47BC), // Purple
+      const Color(0xFFEF5350), // Red
+    ];
 
-    final shadowColor =
-    isDark ? Colors.black.withOpacity(0.4) : Colors.blueAccent.withOpacity(0.2);
+    final Color cardColor = colors[index % colors.length];
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () => _showGifDialog(gif['text'], gif['gif_url'], isDark),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
+    return GestureDetector(
+      onTap: () => _showKidDialog(gif['text'], gif['gif_url']),
+      child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(18),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white, width: 3),
           boxShadow: [
             BoxShadow(
-              color: shadowColor,
+              color: cardColor.withOpacity(0.2),
               blurRadius: 10,
-              offset: const Offset(0, 6),
+              offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: ListTile(
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          title: Text(
-            gif['text'] ?? "Unnamed Sign",
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
+        child: Row(
+          children: [
+            // Left side: The Color Strip / Icon
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                ),
+              ),
+              child: const Icon(Icons.movie_creation_outlined, color: Colors.white, size: 36),
             ),
-          ),
-          trailing: const Icon(
-            Icons.play_circle_fill,
-            color: Colors.white,
-            size: 30,
-          ),
+
+            // Right side: The Text
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        gif['text'] ?? "Mystery Sign",
+                        style: GoogleFonts.fredoka(
+                          color: const Color(0xFF37474F),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                    // Play Button Icon
+                    Icon(
+                      Icons.play_circle_fill_rounded,
+                      color: cardColor,
+                      size: 40,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showGifDialog(String? title, String gifUrl, bool isDark) {
+  void _showKidDialog(String? title, String gifUrl) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.85),
+      // Dark blur background to focus attention
+      barrierColor: const Color(0xFF263238).withOpacity(0.9),
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(16),
+          insetPadding: const EdgeInsets.all(20),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Hero(
-                tag: gifUrl,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.network(
-                    gifUrl,
-                    loadingBuilder: (BuildContext context, Widget child,
-                        ImageChunkEvent? loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                              : null,
+              // 1. The "TV Screen" Frame
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFFFD54F), width: 8), // Yellow TV Frame
+                  boxShadow: [
+                    const BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // The Image
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      child: Image.network(
+                        gifUrl,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return Container(
+                            height: 200,
+                            color: Colors.white,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.orangeAccent,
+                                value: progress.expectedTotalBytes != null
+                                    ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 200,
+                          width: double.infinity,
+                          color: Colors.grey[100],
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.broken_image_rounded, size: 50, color: Colors.grey),
+                              Text("Oops! Image broken", style: GoogleFonts.fredoka(color: Colors.grey)),
+                            ],
+                          ),
                         ),
-                      );
-                    },
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 200,
-                      width: 200,
-                      color: isDark
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade300,
-                      child: const Icon(Icons.broken_image, size: 60),
+                      ),
+                    ),
+
+                    // The Title Bar under the image
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFD54F), // Match border
+                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+                      ),
+                      child: Text(
+                        title ?? "Mystery Sign",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.fredoka(
+                          color: const Color(0xFF5D4037),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // 2. Big "Done" Button
+              SizedBox(
+                width: 160,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF4081), // Hot Pink
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      side: const BorderSide(color: Colors.white, width: 3),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title ?? "Unknown Sign",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                  isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9),
-                  foregroundColor: Colors.blueAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_rounded, size: 28),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Done!",
+                        style: GoogleFonts.fredoka(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
                   ),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 12),
-                ),
-                icon: const Icon(Icons.close),
-                label: Text(
-                  "Close",
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
                 ),
               ),
             ],

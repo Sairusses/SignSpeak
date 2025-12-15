@@ -201,168 +201,6 @@ class _TextToSignPageState extends State<TextToSignPage> {
     return english;
   }
 
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final colorScheme = theme.colorScheme;
-
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-
-            // Header
-            Text(
-              "Text to Sign",
-              style: GoogleFonts.poppins(
-                color: colorScheme.onBackground,
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Type text and view its sign language translation",
-              style: GoogleFonts.poppins(
-                color: isDark ? Colors.grey[400] : Colors.grey[700],
-                fontSize: 14,
-                letterSpacing: 0.8,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-
-            // GIF Section
-            Expanded(
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : gifFile != null
-                      ? Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.all(12),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.file(
-                        gifFile!,
-                        fit: BoxFit.contain,
-                        key: ValueKey(gifFile!.path),
-                      ),
-                    ),
-                  )
-                      : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.sign_language,
-                          size: 80,
-                          color:
-                          isDark ? Colors.grey[600] : Colors.grey),
-                      const SizedBox(height: 10),
-                      Text(
-                        "No animation yet",
-                        style: TextStyle(
-                          color: isDark
-                              ? Colors.grey[500]
-                              : Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Last Translated Text
-            if (_lastTranslatedText.isNotEmpty && !isLoading)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Text(
-                  _lastTranslatedText,
-                  style: GoogleFonts.poppins(
-                    color: colorScheme.onBackground.withOpacity(0.8),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 24,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-
-            // Input Section
-            Container(
-              height: 70,
-              margin: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.grey[900]?.withOpacity(0.7)
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(40),
-                boxShadow: [
-                  if (!isDark)
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 12),
-                  IconButton(
-                    icon: Icon(Icons.history,
-                        color: colorScheme.primary),
-                    onPressed: () => _showHistoryDialog(),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      maxLines: 3,
-                      textAlignVertical: TextAlignVertical.center,
-                      style: TextStyle(color: colorScheme.onSurface),
-                      decoration: InputDecoration(
-                        hintText: "Type a message...",
-                        hintStyle: TextStyle(
-                          color: isDark
-                              ? Colors.grey[500]
-                              : Colors.grey[600],
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 18),
-                      ),
-                      onSubmitted: (text) => _handleSend(),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      _isListening ? Icons.stop_circle : Icons.mic,
-                      color: colorScheme.primary,
-                    ),
-                    onPressed: _toggleMic,
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.send_rounded,
-                        color: colorScheme.primary),
-                    onPressed: _handleSend,
-                  ),
-                  const SizedBox(width: 6),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
   void _handleSend() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
@@ -374,7 +212,6 @@ class _TextToSignPageState extends State<TextToSignPage> {
     });
     _controller.clear();
   }
-
   void _showHistoryDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF121212) : Colors.white;
@@ -505,6 +342,260 @@ class _TextToSignPageState extends State<TextToSignPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // --- KIDS THEME PALETTE ---
+    // Defining colors locally for clarity.
+    // In a real app, put these in your AppTheme.
+    final Color bgBase = const Color(0xFFE0F7FA); // Light Cyan
+    final Color primaryPop = const Color(0xFFFF4081); // Bubblegum Pink
+    final Color secondaryPop = const Color(0xFF00E5FF); // Bright Cyan
+    final Color softWhite = const Color(0xFFFFFFFF);
+    final Color textDark = const Color(0xFF2D3142); // Soft Navy (instead of black)
+    final Color frameColor = const Color(0xFFFFD54F); // Sunshine Yellow
+
+    return Scaffold(
+      backgroundColor: bgBase,
+      // Using a Stack to add playful background bubbles
+      body: Stack(
+        children: [
+          // Decorative Background Bubble 1 (Top Left)
+          Positioned(
+            top: -50,
+            left: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: secondaryPop.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          // Decorative Background Bubble 2 (Bottom Right)
+          Positioned(
+            bottom: 100,
+            right: -30,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                color: primaryPop.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+
+          // Main Content
+          SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+
+                // --- HEADER ---
+                Text(
+                  "👋 Text to Sign!",
+                  style: GoogleFonts.fredoka( // Changed to a rounded, fun font
+                    color: textDark,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 32, // Bigger title
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                      color: softWhite,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)
+                      ]
+                  ),
+                  child: Text(
+                    "Type a word to see magic hands! ✨",
+                    style: GoogleFonts.fredoka(
+                      color: textDark.withOpacity(0.7),
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // --- THE "TV" SCREEN (GIF SECTION) ---
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: softWhite,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: frameColor, width: 8), // Chunky border
+                        boxShadow: [
+                          BoxShadow(
+                            color: frameColor.withOpacity(0.4),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 400),
+                        child: isLoading
+                            ? CircularProgressIndicator(
+                          color: primaryPop,
+                          strokeWidth: 6, // Thicker loader
+                        )
+                            : gifFile != null
+                            ? ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.file(
+                            gifFile!,
+                            fit: BoxFit.contain,
+                            key: ValueKey(gifFile!.path),
+                          ),
+                        )
+                            : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.sentiment_very_satisfied_rounded,
+                                size: 80, color: Colors.grey[300]),
+                            const SizedBox(height: 10),
+                            Text(
+                              "Waiting for you!",
+                              style: GoogleFonts.fredoka(
+                                color: Colors.grey[400],
+                                fontSize: 20,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // --- LAST TRANSLATED WORD ---
+                if (_lastTranslatedText.isNotEmpty && !isLoading)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20, top: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: secondaryPop.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: Text(
+                        _lastTranslatedText.toUpperCase(),
+                        style: GoogleFonts.fredoka(
+                          color: textDark,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 28,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // --- CHUNKY INPUT AREA ---
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: softWhite,
+                    borderRadius: BorderRadius.circular(35), // Very round
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF90CAF9).withOpacity(0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // History Button
+                      _buildKidButton(
+                        icon: Icons.history_rounded,
+                        color: Colors.orangeAccent,
+                        onTap: () => _showHistoryDialog(),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // Input Field
+                      Expanded(
+                        child: TextField(
+                          controller: _controller,
+                          style: GoogleFonts.fredoka(
+                              color: textDark,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "Type here...",
+                            hintStyle: GoogleFonts.fredoka(color: Colors.grey[400]),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                          ),
+                          onSubmitted: (text) => _handleSend(),
+                        ),
+                      ),
+
+                      // Mic Button
+                      _buildKidButton(
+                        icon: _isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                        color: _isListening ? Colors.redAccent : secondaryPop,
+                        onTap: _toggleMic,
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // Send Button
+                      _buildKidButton(
+                        icon: Icons.send_rounded,
+                        color: primaryPop,
+                        onTap: _handleSend,
+                        isFilled: true, // Make this one solid filled
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Helper widget to make consistent bouncy buttons
+  Widget _buildKidButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    bool isFilled = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: isFilled ? color : color.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: isFilled ? Colors.white : color,
+          size: 24,
         ),
       ),
     );

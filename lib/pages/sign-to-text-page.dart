@@ -357,26 +357,39 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final backgroundColor = isDark ? Colors.black : const Color(0xfff6f8fb);
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final sheetColor = isDark
-        ? Colors.grey[900]!.withOpacity(0.95)
-        : Colors.white.withOpacity(0.95);
-    final glassColor = isDark
-        ? Colors.black.withOpacity(0.4)
-        : Colors.white.withOpacity(0.7);
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.2)
-        : Colors.white.withOpacity(0.4);
+    // === 🎨 KID-FRIENDLY COLOR PALETTE ===
+    // We ignore system dark mode to keep the app bright and happy always!
+    const Color kSkyBlue = Color(0xFF4CB5F9);
+    const Color kBananaYellow = Color(0xFFFFD93D);
+    const Color kBubblegumPink = Color(0xFFFF6B6B);
+    const Color kLimeGreen = Color(0xFF6BCB77);
+    const Color kDeepNavy = Color(0xFF2C3E50); // Easier to read than black
+    const Color kCreamWhite = Color(0xFFFFF9E5);
+    const Color kCardBg = Colors.white;
 
     if (!_isInitialized || !isCameraInitialized) {
       return Scaffold(
-        backgroundColor: backgroundColor,
+        backgroundColor: kSkyBlue,
         body: Center(
-          child: CircularProgressIndicator(
-            color: isDark ? Colors.white : Colors.blueAccent,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Bouncy loading indicator
+              CircularProgressIndicator(
+                color: kBananaYellow,
+                strokeWidth: 6,
+                backgroundColor: Colors.white24,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Loading Camera...",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              )
+            ],
           ),
         ),
       );
@@ -385,7 +398,7 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
     final previewSize = cameraController!.value.previewSize!;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: kDeepNavy, // Background behind camera
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -399,94 +412,157 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
               child: CameraPreview(cameraController!),
             ),
           ),
+
           // ===== HAND LANDMARK OVERLAY =====
+          // We keep the painter logic, but make the loading spinner colorful
           FittedBox(
             fit: BoxFit.cover,
             child: SizedBox(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.width *
-                cameraController!.value.aspectRatio,
-                child: !_isProcessing
+                  cameraController!.value.aspectRatio,
+              child: !_isProcessing
                   ? CustomPaint(
-                  painter: LandmarkPainter(
-                    hands: _landmarks,
-                    previewSize: previewSize,
-                    lensDirection: cameraController!.description.lensDirection,
-                    sensorOrientation: cameraController!.description.sensorOrientation,
-                  ),
-                )
-                    : Center(child: CircularProgressIndicator(color: Color(0xFF004687)),),
-            ),
-          ),
-          // ===== CENTER HAND GUIDE =====
-          Align(
-            alignment: Alignment(0, -0.25), // x=0 center, y=-0.3 moves slightly up
-            child: Container(
-              width: 250, // width of the hand box
-              height: 250, // height of the hand box
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.8), // border color
-                  width: 2,
+                painter: LandmarkPainter(
+                  hands: _landmarks,
+                  previewSize: previewSize,
+                  lensDirection:
+                  cameraController!.description.lensDirection,
+                  sensorOrientation:
+                  cameraController!.description.sensorOrientation,
                 ),
-                borderRadius: BorderRadius.circular(16),
-                color: Colors.white.withOpacity(0.1), // subtle fill
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
+              )
+                  : Center(
+                child: CircularProgressIndicator(
+                  color: kBananaYellow,
+                  strokeWidth: 5,
+                ),
               ),
             ),
           ),
-          // ===== TRANSLATED TEXT OVERLAY =====
-            if (_translatedText.isNotEmpty)
-              Positioned(
-              bottom: 220,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: glassColor,
-                  border: Border.all(color: borderColor, width: 1),
-                  borderRadius: BorderRadius.circular(12),
+
+          // ===== CENTER HAND GUIDE (The "Viewfinder") =====
+          Align(
+            alignment: const Alignment(0, -0.25),
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                // Thick playful border
+                border: Border.all(
+                  color: kBananaYellow.withOpacity(0.8),
+                  width: 6, // Chunky border
                 ),
-                child: Text(
-                  _processedText.isEmpty
-                      ? _translatedText
-                      : (_showProcessed ? _processedText : _translatedText),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+                borderRadius: BorderRadius.circular(30), // Super rounded
+                color: Colors.white.withOpacity(0.1),
+                boxShadow: [
+                  BoxShadow(
+                    color: kDeepNavy.withOpacity(0.3),
+                    blurRadius: 15,
+                    spreadRadius: 2,
                   ),
+                ],
+              ),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    "Put Hand Here!",
+                    style: TextStyle(
+                        color: kBananaYellow,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        shadows: [
+                          Shadow(blurRadius: 4, color: Colors.black45, offset: Offset(2,2))
+                        ]
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ===== TRANSLATED TEXT OVERLAY (The "Speech Bubble") =====
+          if (_translatedText.isNotEmpty)
+            Positioned(
+              top: 40,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: kSkyBlue, width: 4),
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 0,
+                      offset: Offset(0, 6), // "3D" effect
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      "I see...",
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      _processedText.isEmpty
+                          ? _translatedText
+                          : (_showProcessed ? _processedText : _translatedText),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: kDeepNavy,
+                        fontSize: 28, // Big text
+                        fontWeight: FontWeight.w900, // Extra bold
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
 
-          // ===== SWITCH CAMERA BUTTON =====
+          // ===== SWITCH CAMERA BUTTON (The "Green Button") =====
           Positioned(
             bottom: 140,
-            right: 25,
+            right: 30,
             child: AnimatedBuilder(
               animation: _rotationAnimation,
               builder: (context, child) {
                 return Transform.rotate(
                   angle: _rotationAnimation.value * 6.28,
-                  child: IconButton(
-                    onPressed: () async {
+                  child: GestureDetector(
+                    onTap: () async {
                       await _rotationController.forward(from: 0);
                       _switchCamera();
                     },
-                    icon: Icon(
-                      CupertinoIcons.switch_camera_solid,
-                      color: Colors.white,
-                      size: 32,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: kLimeGreen,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 0,
+                            offset: Offset(0, 4), // Pushy button effect
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        CupertinoIcons.switch_camera_solid,
+                        color: Colors.white,
+                        size: 30,
+                      ),
                     ),
                   ),
                 );
@@ -494,9 +570,9 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
             ),
           ),
 
-          // ===== RECORD BUTTON =====
+          // ===== RECORD BUTTON (The "Big Red Button") =====
           Positioned(
-            bottom: 140,
+            bottom: 130,
             left: 0,
             right: 0,
             child: Center(
@@ -508,208 +584,246 @@ class _SignToTextPageState extends State<SignToTextPage> with SingleTickerProvid
                     _startVideoRecording();
                   }
                 },
-                child: Container(
-                  width: 60,
-                  height: 60,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: _isRecording ? 80 : 75,
+                  height: _isRecording ? 80 : 75,
                   decoration: BoxDecoration(
-                    color: _isRecording
-                        ? Colors.redAccent
-                        : (isDark ? Colors.white10 : Colors.white),
+                    color: _isRecording ? kBubblegumPink : Colors.white,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isDark ? Colors.white54 : Colors.black12,
-                      width: 1.5,
+                      color: _isRecording ? Colors.white : kBubblegumPink,
+                      width: 5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark
-                            ? Colors.black45
-                            : Colors.black26,
+                        color: Colors.black26,
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
                     ],
                   ),
                   child: Icon(
-                    _isRecording ? Icons.stop : Icons.fiber_manual_record,
-                    color: _isRecording ? Colors.white : Colors.red,
-                    size: 50,
+                    _isRecording ? Icons.stop_rounded : Icons.fiber_manual_record_rounded,
+                    color: _isRecording ? Colors.white : kBubblegumPink,
+                    size: 45,
                   ),
                 ),
               ),
             ),
           ),
 
-          // ===== PROCESSED SIGNS PANEL BUTTON =====
+          // ===== MENU BUTTON (The "Blue Button") =====
           Positioned(
-            left: 16,
-            bottom: 135,
-            child: Column(
-              children: [
-                // Toggle Button
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _showPanel = !_showPanel;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white12 : Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: isDark ? Colors.black45 : Colors.black26,
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.menu_book,
-                      size: 28,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-              ],
-            ),
-          ),
-          // ===== MODERN PANEL =====
-          if (_showPanel && !_isRecording)
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 280, // width of the side panel
+            left: 30,
+            bottom: 140,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _showPanel = !_showPanel;
+                });
+              },
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: sheetColor.withOpacity(0.95),
+                  color: kSkyBlue,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black26,
-                      blurRadius: 10,
-                      offset: const Offset(3, 0),
+                      blurRadius: 0,
+                      offset: Offset(0, 4),
                     ),
                   ],
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(24),
-                    bottomRight: Radius.circular(24),
-                  ),
+                ),
+                child: const Icon(
+                  Icons.menu_book_rounded,
+                  size: 30,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+
+          // ===== "STICKER BOOK" SIDE PANEL =====
+          if (_showPanel && !_isRecording)
+            Positioned(
+              left: 0,
+              top: 20, // Floating slightly
+              bottom: 20,
+              width: 300,
+              child: Container(
+                margin: const EdgeInsets.only(left: 10),
+                decoration: BoxDecoration(
+                  color: kCreamWhite,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: kSkyBlue, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 15,
+                      offset: const Offset(5, 5),
+                    ),
+                  ],
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Close Button
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _showPanel = false;
-                          });
-                        },
-                        child: Icon(
-                          Icons.close,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                    // --- Header ---
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: kSkyBlue,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(24),
+                          topRight: Radius.circular(24),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Processed Text
-                    Text(
-                      "Processed Text",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: textColor,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "MY WORDS",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 20,
+                              color: Colors.white,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _showPanel = false;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle),
+                              child: Icon(Icons.close_rounded,
+                                  color: kBubblegumPink, size: 24),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _processedText.isEmpty
-                          ? (_translatedText.isEmpty ? "No text yet..." : _translatedText)
-                          : (_showProcessed ? _processedText : _translatedText),
-                      style: TextStyle(fontSize: 15, color: textColor),
-                    ),
-                    const SizedBox(height: 20),
 
-                    // Captured Signs
-                    Text(
-                      "Captured Signs",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
+                    // --- Content ---
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: pictures.length,
-                        itemBuilder: (context, index) {
-                          final img = pictures[index];
-                          final letter = predicted_letters[index];
-                          final conf = confidences[index];
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Current Text Bubble
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                    color: Colors.grey.shade300, width: 2),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
 
-                          return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: isDark ? Colors.grey[850] : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: isDark ? Colors.black54 : Colors.black12,
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
+                            Text(
+                              "COLLECTION",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: kSkyBlue,
+                              ),
                             ),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.file(
-                                    File(img.path),
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Prediction: $letter",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: textColor,
+                            const SizedBox(height: 10),
+
+                            // List of Stickers (Images)
+                            Expanded(
+                              child: ListView.builder(
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: pictures.length,
+                                itemBuilder: (context, index) {
+                                  final img = pictures[index];
+                                  final letter = predicted_letters[index];
+                                  final conf = confidences[index];
+
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          offset: const Offset(0, 4),
+                                          blurRadius: 8,
                                         ),
-                                      ),
-                                      Text(
-                                        "Confidence: ${(conf * 100).toStringAsFixed(1)}%",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isDark ? Colors.white70 : Colors.grey[600],
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: kBananaYellow, width: 3),
+                                            borderRadius: BorderRadius.circular(15),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: Image.file(
+                                              File(img.path),
+                                              width: 55,
+                                              height: 55,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "It looks like:",
+                                                style: TextStyle(fontSize: 10, color: Colors.grey),
+                                              ),
+                                              Text(
+                                                "Letter $letter",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 18,
+                                                  color: kDeepNavy,
+                                                ),
+                                              ),
+                                              // Fun progress bar instead of just text
+                                              Padding(
+                                                padding: const EdgeInsets.only(top:4.0),
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  child: LinearProgressIndicator(
+                                                    value: conf,
+                                                    backgroundColor: Colors.grey[200],
+                                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                                        conf > 0.8 ? kLimeGreen : kBananaYellow
+                                                    ),
+                                                    minHeight: 8,
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
-                          );
-                        },
+                          ],
+                        ),
                       ),
                     ),
                   ],
